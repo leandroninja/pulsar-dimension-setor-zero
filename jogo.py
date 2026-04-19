@@ -350,7 +350,17 @@ def draw_boss(surf, cx, cy, col, hp, btype, flash=0):
     pygame.draw.rect(surf,c,(bar_x,bar_y,bar_w,7),1)
 
 
-# ── Projéteis e power-ups ──────────────────────────────────────────────────────
+# ── Asteroides e projéteis ────────────────────────────────────────────────────
+def draw_asteroid(surf, cx, cy, radius, col, seed):
+    rng = random.Random(seed)
+    pts = []
+    for i in range(9):
+        a = 2*math.pi*i/9 + rng.uniform(-0.25, 0.25)
+        r = radius * rng.uniform(0.65, 1.0)
+        pts.append((int(cx + r*math.cos(a)), int(cy + r*math.sin(a))))
+    pygame.draw.polygon(surf, dim(col, 0.22), pts)
+    pygame.draw.polygon(surf, dim(col, 0.65), pts, 1)
+
 def draw_bullet_player(surf, bx, by, col):
     pygame.draw.rect(surf,col,(int(bx)-2,int(by)-6,4,12))
     pygame.draw.rect(surf,dim(col,0.4),(int(bx)-1,int(by)-9,2,4))
