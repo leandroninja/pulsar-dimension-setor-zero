@@ -110,7 +110,7 @@ PHASES = [
 ]
 
 screen = pygame.display.set_mode((W, H))
-pygame.display.set_caption("NAVE RETRÔ")
+pygame.display.set_caption("PULSAR: SETOR ZERO")
 clock  = pygame.time.Clock()
 
 _font_lg = pygame.font.SysFont("Courier New", 36, bold=True)
@@ -940,8 +940,9 @@ class Game:
 
     def _draw_menu(self):
         pal=self.pal; c=pal['ui']; t=pygame.time.get_ticks()/1000
-        glow_text(screen,"NAVE RETRÔ",_font_lg,c,W//2,H//2-100,center=True)
-        glow_text(screen,"10 FASES · 10 CHEFES · SURVIVAL MODE",_font_sm,dim(c,0.65),W//2,H//2-52,center=True)
+        glow_text(screen,"PULSAR: SETOR ZERO",_font_lg,c,W//2,H//2-108,center=True)
+        glow_text(screen,"A ÚLTIMA FREQUÊNCIA DE RESISTÊNCIA",_font_sm,dim(c,0.5),W//2,H//2-64,center=True)
+        glow_text(screen,"10 SETORES · 10 CHEFES · SURVIVAL MODE",_font_sm,dim(c,0.65),W//2,H//2-42,center=True)
         if int(t*1.5)%2==0:
             glow_text(screen,"PRESSIONE ENTER PARA INICIAR",_font_sm,c,W//2,H//2-12,center=True)
         lines=[("SETAS / WASD","MOVER"),("ESPAÇO / Z","ATIRAR"),("B / X","BOMBA")]
