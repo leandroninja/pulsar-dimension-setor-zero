@@ -1106,6 +1106,7 @@ class Game:
     CONTINUE_PROMPT = 4
     GAME_OVER       = 5
     VICTORY         = 6
+    INTRO_CS        = 7
 
     def __init__(self):
         self.highscore = load_hs()
@@ -1183,7 +1184,9 @@ class Game:
                 if k == pygame.K_ESCAPE:
                     save_hs(self.score); pygame.quit(); sys.exit()
                 if self.state == self.MENU and k == pygame.K_RETURN:
-                    self.state = self.PLAYING
+                    self._start_intro_cs()
+                if self.state == self.INTRO_CS and k == pygame.K_RETURN:
+                    self._init_game(); self.state = self.PLAYING
                 if self.state == self.GAME_OVER and k == pygame.K_RETURN:
                     self._init_game(); self.state = self.PLAYING
                 if self.state == self.VICTORY and k == pygame.K_RETURN:
@@ -1222,6 +1225,10 @@ class Game:
             self.continue_countdown -= 1
             if self.continue_countdown <= 0:
                 self.state = self.MENU
+            return
+
+        if self.state == self.INTRO_CS:
+            self._update_intro_cs()
             return
 
         if self.state != self.PLAYING:
@@ -1611,6 +1618,7 @@ class Game:
         elif self.state==self.CONTINUE_PROMPT:  self._draw_continue()
         elif self.state==self.GAME_OVER:        self._draw_game_over()
         elif self.state==self.VICTORY:          self._draw_victory()
+        elif self.state==self.INTRO_CS:         self._draw_intro_cs()
         screen.blit(_scanline,(0,0))
         pygame.display.flip()
 
@@ -1898,6 +1906,225 @@ class Game:
         glow_text(screen,"TODOS OS 10 SETORES LIBERTADOS",_font_md,c,W//2,H//2-28,center=True)
         glow_text(screen,f"PONTUAÇÃO FINAL: {self.score:07d}",_font_md,c,W//2,H//2+18,center=True)
         glow_text(screen,"ENTER — MENU PRINCIPAL",_font_sm,dim(c,0.55),W//2,H//2+68,center=True)
+
+    # ── Cutscene de abertura ──────────────────────────────────────────────────
+    def _start_intro_cs(self):
+        self.state       = self.INTRO_CS
+        self.cs_t        = 0.0
+        self.cs_scene    = 0
+        self.cs_particles= []
+        self.cs_exploded = False
+
+    def _update_intro_cs(self):
+        dt = 1.0 / FPS
+        self.cs_t += dt
+        t = self.cs_t
+        BREAKS = [6.0, 12.0, 18.0, 23.0, 30.0, 37.0]
+        self.cs_scene = len([b for b in BREAKS if t >= b])
+
+        for p in self.cs_particles:
+            p[0]+=p[2]; p[1]+=p[3]; p[4]-=dt
+        self.cs_particles=[p for p in self.cs_particles if p[4]>0]
+
+        update_stars(self.stars)
+
+        if self.cs_scene == 2:
+            local_t = t - 12.0
+            if random.random()<0.18 and local_t<4.8:
+                spawn_particles(self.cs_particles, 280, H//2,
+                                PHASES[0]['ui'], n=6, spd=3)
+            if local_t>4.6 and not self.cs_exploded:
+                self.cs_exploded=True
+                spawn_particles(self.cs_particles, 280, H//2,
+                                (255,200,50), n=45, spd=8)
+        elif self.cs_scene==3 and not self.cs_exploded:
+            self.cs_exploded=True
+            spawn_particles(self.cs_particles, 280, H//2,
+                            (255,180,30), n=55, spd=7)
+
+        if t >= 42.0:
+            self._init_game()
+            self.state = self.PLAYING
+
+    def _draw_intro_cs(self):
+        t     = self.cs_t
+        scene = self.cs_scene
+        c_cyan  = PHASES[9]['ui']   # ciano dimensional
+        c_green = PHASES[0]['ui']   # verde retro da L1
+
+        screen.fill((0, 0, 6))
+        draw_stars(screen, self.stars, PHASES[9]['star'])
+
+        def draw_L1(cx, cy, col, inv=0):
+            if inv and (inv//6)%2==0: return
+            cx,cy=int(cx),int(cy)
+            pts=[(cx,cy-16),(cx-14,cy+9),(cx-7,cy+3),
+                 (cx,cy+11),(cx+7,cy+3),(cx+14,cy+9)]
+            pygame.draw.polygon(screen,dim(col,0.35),pts)
+            pygame.draw.polygon(screen,col,pts,1)
+            pygame.draw.circle(screen,col,(cx,cy-4),4)
+            pygame.draw.circle(screen,dim(col,0.25),(cx,cy-4),3)
+
+        def draw_pts():
+            for p in self.cs_particles:
+                a=p[4]/p[5]; col=dim(p[6],a)
+                sx,sy=int(p[0]),int(p[1])
+                if 0<=sx<W and 0<=sy<H: screen.set_at((sx,sy),col)
+
+        def fade_in(text, font, col, x, y, start_abs, dur=1.2, center=True):
+            dt2=t-start_abs
+            if dt2<=0: return
+            alpha=min(255,int(dt2/dur*255))
+            s=pygame.Surface((W,H),pygame.SRCALPHA)
+            img=font.render(text,True,col)
+            rx=x-img.get_width()//2 if center else x
+            s.blit(img,(rx,y)); s.set_alpha(alpha)
+            screen.blit(s,(0,0))
+
+        SCENE_STARTS = [0,6,12,18,23,30,37]
+        local_t = t - SCENE_STARTS[min(scene,6)]
+
+        if scene == 0:
+            # Portal dimensional + L1 emergindo
+            pr = int(50+math.sin(local_t*4)*5)
+            for pw in range(22,2,-3):
+                pa=max(0,int(58*(1-pw/24.0)*(0.6+0.4*math.sin(local_t*5))))
+                ps2=pygame.Surface((W,H),pygame.SRCALPHA)
+                pygame.draw.circle(ps2,(*c_cyan,pa),(120,H//2),pr+pw,pw)
+                screen.blit(ps2,(0,0))
+            pygame.draw.circle(screen,(0,0,0),(120,H//2),pr)
+            pygame.draw.circle(screen,c_cyan,(120,H//2),pr,2)
+            emerge_x=int(120+min(1.0,local_t/5.5)*145)
+            if emerge_x>125: draw_L1(emerge_x,H//2,c_green)
+            fade_in("ANO 2247 — COORDENADAS: DESCONHECIDAS",
+                    _font_sm,c_cyan,W//2,H//2+80,1.0)
+            fade_in("DIMENSÃO: DESCONHECIDA",
+                    _font_md,c_cyan,W//2,H//2+108,2.5)
+
+        elif scene == 1:
+            # L1 voando, inimigos surgindo
+            lx=int(280+math.sin(local_t*0.6)*12)
+            ly=int(H//2+math.sin(local_t*0.9)*8)
+            draw_L1(lx,ly,c_green)
+            for i,etype in enumerate([0,1,3]):
+                prog=max(0.0,min(1.0,(local_t-i*1.0)/2.5))
+                ex=int(W-80-i*80-(1.0-prog)*200)
+                ey=int(H//2-65+i*55)
+                if prog>0.05:
+                    draw_enemy(screen,ex,ey,PHASES[5]['ec'],etype)
+            fade_in("ESTA DIMENSÃO É DIFERENTE",
+                    _font_md,c_cyan,W//2,H//2+70,6.5)
+            fade_in("ARMAS QUE A HUMANIDADE JAMAIS VISLUMBROU",
+                    _font_sm,dim(c_cyan,0.6),W//2,H//2+100,8.5)
+
+        elif scene == 2:
+            # Inimigos atacando L1
+            for i,etype in enumerate([0,1,3]):
+                ex=int(W-80-i*80); ey=int(H//2-65+i*55)
+                draw_enemy(screen,ex,ey,PHASES[5]['ec'],etype)
+                bprog=(local_t*1.8+i*0.6)%1.0
+                bx=int(ex+(280-ex)*bprog); by=int(ey+(H//2-ey)*bprog)
+                if 0<=bx<W and 0<=by<H:
+                    pygame.draw.circle(screen,PHASES[5]['be'],(bx,by),4)
+                    pygame.draw.circle(screen,
+                        _bright(PHASES[5]['be'],60),(bx,by),2)
+            if local_t<5.0:
+                draw_L1(280,H//2,c_green,
+                        1 if int(local_t*12)%3==0 else 0)
+            draw_pts()
+            fade_in("A L1 FOI DESTRUÍDA EM QUESTÃO DE SEGUNDOS",
+                    _font_sm,(255,80,80),W//2,H//2+90,13.5)
+
+        elif scene == 3:
+            # L1 explode, cápsula de ejeção cai
+            draw_pts()
+            if local_t<0.4:
+                fa=int((1-local_t/0.4)*220)
+                fs=pygame.Surface((W,H),pygame.SRCALPHA)
+                fs.fill((255,200,60,fa)); screen.blit(fs,(0,0))
+            cap_prog=min(1.0,local_t/5.0)
+            cap_x=int(280+math.sin(local_t*3)*18)
+            cap_y=int(H//2+cap_prog*(H-H//2-30))
+            pygame.draw.ellipse(screen,dim(c_cyan,0.5),
+                                (cap_x-8,cap_y-14,16,28))
+            pygame.draw.ellipse(screen,c_cyan,
+                                (cap_x-6,cap_y-12,12,24),1)
+            pygame.draw.circle(screen,_bright(c_cyan,60),
+                               (cap_x,cap_y-8),4)
+            fade_in("L.O.M EJETOU NO ÚLTIMO INSTANTE",
+                    _font_md,c_cyan,W//2,H//2-60,18.5)
+            fade_in("Caindo entre os escombros de uma antiga base em ruínas...",
+                    _font_sm,dim(c_cyan,0.5),W//2,H//2-28,21.0)
+
+        elif scene == 4:
+            # Ruínas do planeta, sobreviventes da resistência
+            c_ruins=(0,55,20)
+            for ry2 in range(H-70,H,14):
+                pygame.draw.line(screen,c_ruins,(0,ry2),(W,ry2),1)
+            rpts=[(0,H),(0,H-80),(80,H-80),(80,H-130),(160,H-130),
+                  (160,H-90),(240,H-90),(240,H-160),(320,H-160),
+                  (320,H-85),(400,H-85),(400,H-110),(480,H-110),
+                  (480,H-80),(600,H-80),(600,H)]
+            pygame.draw.polygon(screen,(0,30,10),rpts)
+            pygame.draw.polygon(screen,c_ruins,rpts[1:-1],1)
+            lom_x=min(200,int(120+local_t*20)); lom_y=H-85
+            pygame.draw.circle(screen,c_cyan,(lom_x,lom_y-14),5)
+            pygame.draw.line(screen,c_cyan,(lom_x,lom_y-9),(lom_x,lom_y+2),2)
+            for i,sx in enumerate([490,522,555]):
+                prog2=max(0.0,local_t-i*0.4)
+                if prog2>0:
+                    sc2=dim(c_cyan,0.45)
+                    pygame.draw.circle(screen,sc2,(sx,lom_y-14),4)
+                    pygame.draw.line(screen,sc2,(sx,lom_y-10),(sx,lom_y+2),1)
+            fade_in("OS ÚLTIMOS SOBREVIVENTES DA RESISTÊNCIA",
+                    _font_md,c_cyan,W//2,H//2-80,24.0)
+            fade_in("Eles lhe contaram tudo. A queda setor por setor.",
+                    _font_sm,dim(c_cyan,0.6),W//2,H//2-42,26.0)
+            fade_in("'AGORA VOCÊ TEM UMA CHANCE. UMA. NÃO DESPERDICE.'",
+                    _font_sm,c_cyan,W//2,H//2-14,28.2)
+
+        elif scene == 5:
+            # LD7 revelada com glow
+            c_ld7=PHASES[0]['ui']
+            pulse=0.7+0.3*math.sin(local_t*3)
+            for gr in range(80,8,-8):
+                ga=max(0,int(50*(1-gr/80.0)*pulse))
+                gs2=pygame.Surface((gr*2,gr*2),pygame.SRCALPHA)
+                pygame.draw.circle(gs2,(*c_ld7,ga),(gr,gr),gr)
+                screen.blit(gs2,(W//2-gr,H//2-gr))
+            draw_player(screen,W//2,H//2,c_ld7)
+            fade_in("A  LD7",_font_lg,c_ld7,W//2,H//2-90,30.5,1.0)
+            fade_in("A ÚNICA ARMA DESSA DIMENSÃO",
+                    _font_md,dim(c_ld7,0.75),W//2,H//2+60,32.0)
+            fade_in("NUNCA TESTADA. NUNCA PILOTADA.",
+                    _font_sm,dim(c_ld7,0.5),W//2,H//2+90,34.0)
+            fade_in("'Agora você tem uma chance. Uma. Não desperdice.'",
+                    _font_sm,dim(c_ld7,0.72),W//2,H//2+118,35.5)
+
+        elif scene == 6:
+            # LD7 decolando para os setores dimensionais
+            c_ld7=PHASES[0]['ui']
+            ld7_y=int(H//2-local_t*32)
+            ld7_x=W//2
+            fh=18+int(math.sin(local_t*14)*8)
+            fc3=(255,160,30) if int(local_t*14)%2 else (255,220,60)
+            pygame.draw.polygon(screen,fc3,
+                [(ld7_x-4,ld7_y+22),(ld7_x+4,ld7_y+22),(ld7_x,ld7_y+22+fh)])
+            if ld7_y > -30: draw_player(screen,ld7_x,ld7_y,c_ld7)
+            fade_in("NÃO HÁ REFORÇOS. NÃO HÁ PLANO B.",
+                    _font_md,c_ld7,W//2,H//2+60,37.5)
+            fade_in("SÓ EXISTE A LD7",
+                    _font_lg,c_ld7,W//2,H//2+108,39.0)
+            if local_t>3.5 and int(t*1.5)%2:
+                glow_text(screen,"ENTER — INICIAR",_font_sm,
+                          dim(c_ld7,0.4),W//2,H-22,center=True)
+            screen.blit(_scanline,(0,0))
+            return
+
+        if int(t*1.5)%2:
+            glow_text(screen,"ENTER — PULAR",_font_sm,
+                      dim(c_cyan,0.25),W//2,H-22,center=True)
+        screen.blit(_scanline,(0,0))
 
 
 # ── Entrada ────────────────────────────────────────────────────────────────────
