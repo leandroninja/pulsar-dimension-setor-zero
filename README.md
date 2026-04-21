@@ -4,6 +4,8 @@
 
 Shoot 'em up retrô com visual CRT fósforo — scanlines, estrelas com parallax e efeitos retrô. Pilote a nave experimental PULSAR através de 10 setores corrompidos e enfrente o coração da invasão.
 
+![Tela inicial](screenshot.png)
+
 ---
 
 ## História

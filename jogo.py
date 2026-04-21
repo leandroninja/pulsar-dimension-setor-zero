@@ -1760,7 +1760,7 @@ class Game:
                 draw_enemy(screen, ex, ey, dim(pal['ec'], 0.24), etype)
 
         # ── Painel do título ──────────────────────────────────────────────────
-        pw = 494; ph2 = 108; px2 = W//2+52; py2 = 14
+        pw = 494; ph2 = 122; px2 = W//2+52; py2 = 14
         ps = pygame.Surface((pw, ph2), pygame.SRCALPHA)
         ps.fill((0, 0, 0, 158))
         screen.blit(ps, (px2-pw//2, py2))
@@ -1781,11 +1781,13 @@ class Game:
             dim(c,0.88), px2, py2+54, center=True)
         glow_text(screen, "A ÚLTIMA FREQUÊNCIA DE RESISTÊNCIA", _font_sm,
             dim(c,0.42), px2, py2+82, center=True)
+        glow_text(screen, "UMA NOVA DIMENSÃO.", _font_sm,
+            dim(c,0.62), px2, py2+100, center=True)
 
         # ── Features do jogo ──────────────────────────────────────────────────
         feats = [("10","SETORES"),("10","CHEFES"),("10","TIPOS"),("5","ARMAS")]
         for i,(num,lbl) in enumerate(feats):
-            fx2 = W//2-103+i*82; fy2 = 134
+            fx2 = W//2-103+i*82; fy2 = 150
             pygame.draw.rect(screen, dim(c,0.10), (fx2-25, fy2, 50, 38))
             pygame.draw.rect(screen, dim(c,0.30), (fx2-25, fy2, 50, 38), 1)
             glow_text(screen, num,  _font_md, c,          fx2, fy2+2,  center=True)
