@@ -14,43 +14,127 @@ def _mk(samples):
     return pygame.mixer.Sound(buffer=buf)
 
 def _snd_shoot():
-    n = int(SR*0.07)
-    return _mk([32767*0.2*(1-i/n)**2*_sq(900*math.exp(-12*i/SR),i/SR) for i in range(n)])
+    # Plasma bolt: sweep 1400→300 Hz, sine+saw mix com harmônico
+    n = int(SR*0.13)
+    s = []
+    for i in range(n):
+        t = i/SR
+        f = 1400*math.exp(-9*t)
+        env = math.exp(-16*t)*(1-math.exp(-60*t))
+        v = (0.48*math.sin(2*math.pi*f*t)
+           + 0.30*_saw(f*1.5, t)
+           + 0.22*math.sin(2*math.pi*f*2.01*t))
+        s.append(int(32767*0.30*env*v))
+    return _mk(s)
 
 def _snd_hit():
-    n = int(SR*0.05)
-    return _mk([32767*0.25*(1-i/n)**1.5*random.uniform(-1,1) for i in range(n)])
+    # Impacto metálico: ruído + tom descendente + anel breve
+    n = int(SR*0.10)
+    s = []
+    for i in range(n):
+        t = i/SR
+        noise = random.uniform(-1,1)
+        ring  = math.sin(2*math.pi*380*math.exp(-20*t)*t)*math.exp(-18*t)
+        thump = _saw(90*math.exp(-25*t), t)*math.exp(-22*t)
+        env   = math.exp(-22*t)*(1-math.exp(-80*t))
+        s.append(int(32767*0.34*env*(noise*0.5+ring*0.3+thump*0.2)))
+    return _mk(s)
 
 def _snd_explosion():
-    n = int(SR*0.4)
-    return _mk([32767*0.42*math.exp(-4*i/SR)*(random.uniform(-1,1)*0.6+_saw(80*math.exp(-2*i/SR),i/SR)*0.4) for i in range(n)])
+    # Explosão inimiga: sub-bass + crunch + estilhaços
+    n = int(SR*0.60)
+    s = []
+    for i in range(n):
+        t = i/SR
+        sub   = _saw(65*math.exp(-3*t), t)*math.exp(-3.5*t)*(1-math.exp(-40*t))
+        noise = random.uniform(-1,1)*math.exp(-5.5*t)
+        crack = _sq(700*math.exp(-22*t), t)*math.exp(-28*t)
+        debris= random.uniform(-1,1)*math.exp(-9*t)*0.4
+        v = 0.42*sub + 0.32*noise + 0.16*crack + 0.10*debris
+        s.append(int(32767*0.52*v))
+    return _mk(s)
 
 def _snd_powerup():
-    s=[]
-    for freq in [523,659,784,1047]:
-        seg=int(SR*0.1)
+    # Cristal de energia: arpejo ascendente com harmônicos e shimmer
+    freqs = [330, 415, 523, 659, 784, 1047, 1319]
+    s = []
+    for k, freq in enumerate(freqs):
+        dur = 0.072
+        seg = int(SR*dur)
         for j in range(seg):
-            t=j/SR; s.append(32767*0.35*math.exp(-5*t/0.1)*math.sin(2*math.pi*freq*t))
+            t = j/SR
+            env = math.exp(-4*t/dur)*(1-math.exp(-50*t))
+            v = (0.45*math.sin(2*math.pi*freq*t)
+               + 0.25*math.sin(2*math.pi*freq*2*t)
+               + 0.18*math.sin(2*math.pi*freq*3.01*t)
+               + 0.12*_saw(freq*0.5, t))
+            s.append(int(32767*0.38*env*v))
     return _mk(s)
 
 def _snd_bomb():
-    n=int(SR*1.3)
-    return _mk([32767*0.55*math.exp(-1.8*i/SR)*(1-math.exp(-20*i/SR))*(random.uniform(-1,1)*0.5+_saw(50*math.exp(-i/SR),i/SR)*0.5) for i in range(n)])
+    # Bomba épica: sub-bass colossal + cascata de ruído + reverb tail
+    n = int(SR*2.2)
+    s = []
+    for i in range(n):
+        t = i/SR
+        sub    = _saw(38*math.exp(-0.4*t), t)*math.exp(-1.2*t)*(1-math.exp(-35*t))
+        mid    = random.uniform(-1,1)*math.exp(-2.2*t)
+        crack  = _sq(280*math.exp(-18*t), t)*math.exp(-22*t)
+        reverb = (random.uniform(-1,1)*math.exp(-4*(t-0.12))
+                  if t>0.12 else 0.0)*0.55
+        shk    = math.sin(2*math.pi*28*t)*math.exp(-2*t)*0.3
+        v = 0.34*sub + 0.28*mid + 0.14*crack + 0.16*reverb + 0.08*shk
+        s.append(int(32767*0.68*v))
+    return _mk(s)
 
 def _snd_player_dmg():
-    n=int(SR*0.18)
-    return _mk([32767*0.38*math.exp(-8*i/SR)*(_sq(180*math.exp(-4*i/SR),i/SR)*0.6+random.uniform(-0.4,0.4)) for i in range(n)])
+    # Dano ao jogador: impacto metálico + alarme pulsante + distorção
+    n = int(SR*0.30)
+    s = []
+    for i in range(n):
+        t = i/SR
+        impact = _sq(160*math.exp(-7*t), t)*math.exp(-14*t)
+        alarm  = (math.sin(2*math.pi*460*t)*math.exp(-5*t)
+                  *abs(math.sin(2*math.pi*16*t)))
+        noise  = random.uniform(-1,1)*math.exp(-9*t)
+        v = 0.38*impact + 0.38*alarm + 0.24*noise
+        s.append(int(32767*0.46*v))
+    return _mk(s)
 
 def _snd_boss_alert():
-    s=[]
-    for freq in [880,660,440]:
-        for j in range(int(SR*0.22)):
-            t=j/SR; s.append(32767*0.3*math.exp(-3*t/0.22)*_sq(freq,t))
+    # Alerta de chefe: 3 acordes dramáticos com modulação de urgência
+    chords = [(988,740,494), (880,660,440), (988,740,494)]
+    s = []
+    for chord in chords:
+        dur = 0.28; seg = int(SR*dur)
+        for j in range(seg):
+            t = j/SR
+            env   = math.exp(-2*t/dur)*(1-math.exp(-25*t))
+            v     = sum(math.sin(2*math.pi*f*t)/3 for f in chord)
+            pulse = 0.65 + 0.35*abs(math.sin(2*math.pi*10*t))
+            s.append(int(32767*0.38*env*v*pulse))
     return _mk(s)
 
 def _snd_boss_death():
-    n=int(SR*0.9)
-    return _mk([32767*0.55*math.exp(-2*i/SR)*(random.uniform(-1,1)*0.6+_saw(60*math.exp(-1.5*i/SR),i/SR)*0.4) for i in range(n)])
+    # Morte do chefe: explosão em 3 estágios com echo final
+    n = int(SR*1.6)
+    s = []
+    for i in range(n):
+        t = i/SR
+        if t < 0.18:
+            sub = _saw(90*math.exp(-6*t), t)
+            nz  = random.uniform(-1,1)
+            v   = (sub*0.5+nz*0.5)*math.exp(-7*t)*(1-math.exp(-60*t))
+        elif t < 0.85:
+            lt  = t-0.18
+            deb = random.uniform(-1,1)*math.exp(-3.5*lt)
+            ton = _saw(110*math.exp(-2.5*lt), lt)*math.exp(-4*lt)
+            v   = deb*0.55+ton*0.45
+        else:
+            lt  = t-0.85
+            v   = random.uniform(-1,1)*math.exp(-4.5*lt)*0.38
+        s.append(int(32767*0.62*v))
+    return _mk(s)
 
 def _snd_music():
     vol=0.14; bpm=145; beat=60/bpm; h=beat/2; q=beat/4
@@ -1456,9 +1540,83 @@ class Game:
         for p in self.powerups:  draw_powerup(screen,p[0],p[1],p[2],pal['ui'],pal['bp'])
         for b in self.p_bullets: draw_bullet_player(screen,b[0],b[1],b[4])
         draw_player(screen,int(self.px),int(self.py),pal['ui'],self.inv)
-        if self.bomb_flash>0:
-            alpha=int(180*self.bomb_flash/50)
-            fs=pygame.Surface((W,H),pygame.SRCALPHA); fs.fill((*pal['ui'],alpha)); screen.blit(fs,(0,0))
+        if self.bomb_flash > 0:
+            bf = self.bomb_flash                    # 50 → 0
+            p  = 1.0 - bf / 50.0                   # 0.0 → 1.0
+            c2 = pal['ui']
+            WHITE = (255, 255, 220)
+            vfx = pygame.Surface((W, H), pygame.SRCALPHA)
+
+            # Flash branco inicial (primeiros 25% da animação)
+            if p < 0.25:
+                fa = int(240 * (1.0 - p/0.25))
+                pygame.draw.rect(vfx, (*WHITE, fa), (0, 0, W, H))
+
+            # Overlay colorido que dissolve
+            oa = int(155 * max(0.0, 1.0 - p*1.6))
+            if oa > 0:
+                pygame.draw.rect(vfx, (*c2, oa), (0, 0, W, H))
+
+            # Onda de choque principal (expande até cobrir a tela)
+            max_r = int(math.sqrt(W*W + H*H)//2) + 50
+            rr = int(p * max_r)
+            rw = max(2, int(16*(1.0-p)))
+            ra = int(255 * max(0.0, 1.0 - p*1.1))
+            if rr > 2 and ra > 0:
+                pygame.draw.circle(vfx, (*c2, ra), (W//2, H//2), rr, rw)
+                # Anel interno (segunda onda, levemente atrasada)
+                r2 = max(0, rr - 65)
+                if r2 > 2:
+                    pygame.draw.circle(vfx, (*WHITE, ra*2//3),
+                        (W//2, H//2), r2, max(1, rw//2))
+                # Terceiro anel tênue
+                r3 = max(0, rr - 130)
+                if r3 > 2:
+                    pygame.draw.circle(vfx, (*c2, ra//3),
+                        (W//2, H//2), r3, max(1, rw//3))
+
+            # Explosões secundárias espalhadas (posições fixas por seed)
+            rng_b = random.Random(1337)
+            for _ in range(16):
+                bex = rng_b.randint(55, W-55)
+                bey = rng_b.randint(55, H-55)
+                df  = math.hypot(bex-W//2, bey-H//2) / max_r
+                lp  = max(0.0, min(1.0, (p - df*0.22) / 0.78))
+                if lp > 0.0:
+                    br = max(1, int(lp * 42))
+                    ba = int(210 * (1.0 - lp))
+                    if ba > 0:
+                        pygame.draw.circle(vfx, (*c2, ba), (bex, bey), br)
+                        if br > 7:
+                            pygame.draw.circle(vfx, (*WHITE, min(255, ba+60)),
+                                (bex, bey), br//3)
+
+            # Linhas de energia radiando do centro (primeiros 55%)
+            if p < 0.55:
+                lp2 = p / 0.55
+                lr  = int(lp2 * int(W * 0.82))
+                la  = int(170 * (1.0 - lp2))
+                if la > 0 and lr > 10:
+                    for deg in range(0, 360, 20):
+                        ang = math.radians(deg + p*80)
+                        lx  = W//2 + int(lr * math.cos(ang))
+                        ly  = H//2 + int(lr * math.sin(ang))
+                        sr2 = max(0, lr - int(lr*0.72))
+                        sx2 = W//2 + int(sr2 * math.cos(ang))
+                        sy2 = H//2 + int(sr2 * math.sin(ang))
+                        pygame.draw.line(vfx, (*c2, la//2), (sx2,sy2), (lx,ly), 1)
+
+            # Brilho nas bordas (sobe e desce com seno)
+            ev = int(95 * math.sin(math.pi * p))
+            if ev > 0:
+                for er in range(55, 0, -12):
+                    ea = max(0, ev * er // 55)
+                    pygame.draw.rect(vfx, (*c2, ea), (0,    0,    er,  H))
+                    pygame.draw.rect(vfx, (*c2, ea), (W-er, 0,    er,  H))
+                    pygame.draw.rect(vfx, (*c2, ea), (0,    0,    W,   er))
+                    pygame.draw.rect(vfx, (*c2, ea), (0,    H-er, W,   er))
+
+            screen.blit(vfx, (0, 0))
 
     def _draw_hud(self):
         pal=self.pal; c=pal['ui']
