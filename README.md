@@ -24,7 +24,7 @@ Se você ainda não jogou o primeiro, a história começa lá — e o fim dela �
 
 Diante dele estava o **Soberano Zero**, o comandante supremo por trás da destruição de nove frotas inteiras da Aliança Interestelar. Uma entidade de poder incalculável, que havia corrompido setor por setor com uma precisão fria e implacável.
 
-A batalha foi épica. A nave PULSAR, alimentada pela energia bruta de estrelas de nêutrons, resistiu ao impossível. Tiro a tiro, bomba a bomba, L.O.M foi destruindo os sistemas do Soberano — até que o fim parecia certo.
+A batalha foi épica. A nave **L1** — a poderosa nave experimental PULSAR que havia salvado a dimensão — resistiu ao impossível. Tiro a tiro, bomba a bomba, L.O.M foi destruindo os sistemas do Soberano — até que o fim parecia certo.
 
 Então aconteceu.
 
@@ -32,7 +32,7 @@ Percebendo que a derrota era inevitável, o Soberano Zero não recuou. Não pedi
 
 O dispositivo distorceu o espaço-tempo ao redor do Setor Zero. A explosão final do Soberano criou um **buraco negro artificial** que colapsou em fração de segundo, engolindo tudo numa singularidade de escuridão absoluta.
 
-A nave PULSAR, mesmo com toda a sua tecnologia, não teve como escapar.
+A nave L1 não teve como escapar.
 
 **L.O.M foi sugado para os confins do universo.**
 
@@ -42,25 +42,35 @@ A nave PULSAR, mesmo com toda a sua tecnologia, não teve como escapar.
 
 **Ano 2247 — Coordenadas: Desconhecidas. Dimensão: Desconhecida.**
 
-A nave PULSAR emergiu do colapso dimensional em algum lugar que não existe em nenhum mapa. Uma região do cosmos onde as leis da física se dobram, onde os setores do espaço se sobrepõem em camadas distorcidas — uma **dimensão paralela**, corrompida por ecos do Setor Zero.
+A nave L1 emergiu do colapso dimensional em algum lugar que não existe em nenhum mapa conhecido. Uma região do cosmos onde as leis da física se dobram, onde os setores do espaço se sobrepõem em camadas distorcidas — uma **dimensão paralela**, corrompida por forças que a humanidade nunca imaginou.
 
-L.O.M está sozinho. Sem sinal de comunicação. Sem rota de retorno.
+L.O.M estava vivo. Mas não por muito tempo.
 
-Mas o que ele encontra nessa dimensão desconhecida vai além de qualquer ameaça que já enfrentou.
+**Esta dimensão é diferente.** Aqui, civilizações evoluíram por milênios em isolamento total, desenvolvendo tecnologias que a humanidade jamais vislumbrou — armas que manipulam a própria gravidade, escudos feitos de matéria escura condensada, projéteis que curvam trajetória no espaço-tempo. Os inimigos que patrulham esses setores nunca perderam uma batalha. Nunca precisaram.
 
-**Esta dimensão é diferente.** Aqui, civilizações evoluíram por milênios em isolamento total, desenvolvendo tecnologias que a humanidade nunca imaginou — armas que manipulam a própria gravidade, escudos feitos de matéria escura condensada, projéteis que curvam trajetória no espaço-tempo. Os inimigos que patrulham esses setores nunca perderam uma batalha. Nunca precisaram.
+A poderosa **L1**, que outrora salvou toda uma dimensão, não foi páreo. Os primeiros inimigos que encontraram a nave intrusa abriram fogo com um arsenal completamente desconhecido — e a L1, sem defesas compatíveis com aquela tecnologia alienígena, foi **destruída em questão de segundos**.
 
-Até agora.
+L.O.M ejetou no último instante.
 
-O buraco negro não criou apenas um portal — ele **acordou algo**. Nas profundezas dessa dimensão estranha, as forças que a dominam identificaram a nave PULSAR como uma anomalia a ser eliminada. Frotas com tecnologia alienígena nunca antes vista começam a convergir ao redor do único intruso desta dimensão.
+Ele caiu. Atravessou a atmosfera de um planeta em ruínas e foi parar entre os escombros do que parecia ser uma **antiga base de resistência** — destruída, esquecida, mas não completamente abandonada.
 
-Para encontrar um caminho de volta, L.O.M precisa atravessar **10 setores dimensionais** — cada um guardado por comandantes com arsenais impossíveis e poder de fogo sem precedentes — até alcançar o epicentro do colapso: a **Dimensão Setor Zero**, onde ainda pulsa o resquício de energia do dispositivo do Soberano.
+Foi lá que os encontrou.
 
-É a única chance de abrir um portal de volta para casa.
+Os **últimos sobreviventes** da Resistência dessa dimensão: um punhado de guerreiros exaustos que lutavam há décadas contra os mesmos inimigos que acabaram de destruir a L1 em segundos. Quando viram L.O.M emergir dos destroços, reconheceram nele algo que não viam há muito tempo — alguém que ainda não tinha medo.
 
-**Não há reforços. Não há manual. Não há tempo.**
+Eles lhe contaram tudo. A origem dos invasores. A queda setor por setor. A perda de toda esperança.
 
-Só existe o pulsar da nave, a determinação de um homem que já salvou a galáxia uma vez — e a certeza de que, desta vez, o universo inteiro depende dele.
+E então fizeram uma coisa que não faziam mais: **apostaram em alguém**.
+
+Das profundezas da base, retiram a única arma que construíram antes de serem varridos — nunca testada, nunca pilotada, projetada com o que havia de mais avançado nessa dimensão. Uma nave que combinava tecnologia dimensional com os resquícios de dados da L1 que L.O.M carregava no traje de voo.
+
+Eles a chamavam de **LD7**.
+
+*"Agora você tem uma chance,"* disse o comandante dos sobreviventes. *"Uma. Não desperdice."*
+
+L.O.M não respondeu. Apenas entrou na cockpit da LD7, sentiu os sistemas responderem como se a nave o conhecesse — e decolou em direção ao primeiro dos 10 setores dimensionais que separam ele do epicentro do colapso.
+
+**Não há reforços. Não há plano B. Só existe a LD7, um piloto que já salvou a galáxia uma vez — e a determinação de fazer de novo.**
 
 ---
 
@@ -68,7 +78,7 @@ Só existe o pulsar da nave, a determinação de um homem que já salvou a galá
 
 - **Visual CRT retrô** — fundo escuro, scanlines, efeito fósforo
 - **Parallax de estrelas** — 3 camadas em velocidades distintas, sensação real de movimento
-- **Nave PULSAR** com sprites 2D realistas em camadas de cor e brilho
+- **Nave LD7** com sprites 2D realistas em camadas de cor e brilho — mais poderosa que a L1
 - **10 setores dimensionais** com paletas de cor distintas e dificuldade crescente
 - **10 tipos de inimigos** com tecnologia dimensional avançada e comportamentos únicos:
   - Padrão, Rápido, Pesado (3HP)
