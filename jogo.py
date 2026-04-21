@@ -346,6 +346,255 @@ def draw_stars(surf, stars, col):
         if s[2]>=3.0 and 0<=sx<W and sy-4>=0:
             surf.set_at((sx,sy-4),dim(c,0.3))
 
+def draw_background(surf, phase_idx, t):
+    """Cenários únicos e detalhados para cada um dos 10 setores."""
+    tm = t * 0.001
+
+    def blob(cx, cy, rx, ry, col, lyr=6):
+        for i in range(lyr, 0, -1):
+            f = i/lyr
+            fc = tuple(max(0, int(c*f*0.13)) for c in col)
+            r = pygame.Rect(cx-max(1,int(rx*f)), cy-max(1,int(ry*f)),
+                            max(2,int(rx*f*2)), max(2,int(ry*f*2)))
+            pygame.draw.ellipse(surf, fc, r)
+
+    def cstar(x, y, col, r=2):
+        pygame.draw.circle(surf, col, (x,y), r)
+        pygame.draw.circle(surf, tuple(max(0,c//4) for c in col), (x,y), r+3, 1)
+
+    def planet(cx, cy, r, col, bands=None, ring_col=None):
+        pygame.draw.circle(surf, tuple(max(0,int(c*0.3)) for c in col), (cx,cy), r)
+        pygame.draw.circle(surf, col, (cx-r//5, cy-r//5), int(r*0.72))
+        if bands:
+            for by2,bc in bands:
+                fc_b=tuple(max(0,min(255,c)) for c in bc)
+                pygame.draw.ellipse(surf, fc_b, (cx-int(r*0.94), cy+by2-4, int(r*1.88), 8))
+        pygame.draw.circle(surf, tuple(min(255,c+50) for c in col), (cx,cy), r, 1)
+        pygame.draw.circle(surf, tuple(max(0,c//3) for c in col), (cx,cy), r+3, 1)
+        if ring_col:
+            rx2=int(r*2.3); ry2=int(r*0.28)
+            pygame.draw.ellipse(surf, ring_col, (cx-rx2, cy-ry2, rx2*2, ry2*2), 2)
+            pygame.draw.ellipse(surf, tuple(max(0,c//2) for c in ring_col),
+                               (cx-rx2-5, cy-ry2-2, (rx2+5)*2, (ry2+2)*2), 1)
+
+    if phase_idx == 0:  # SETOR VERDE — selva espacial, nebulosa + constelação + binário
+        blob(630, 130, 170, 105, (0,180,50))
+        blob(490, 200, 110, 75, (0,140,30))
+        blob(700, 280, 85, 60, (0,110,20))
+        cpts=[(70,75),(138,108),(202,88),(248,152),(182,184),(116,158)]
+        for i in range(len(cpts)-1):
+            pygame.draw.line(surf, (0,22,0), cpts[i], cpts[i+1], 1)
+        for x,y in cpts: cstar(x, y, (0,120,45))
+        bx,by=690,490; ang=tm*0.85; ro=18
+        pygame.draw.circle(surf,(0,200,85),(int(bx+ro*math.cos(ang)),int(by+ro*math.sin(ang))),4)
+        pygame.draw.circle(surf,(0,110,40),(int(bx-ro*math.cos(ang)),int(by-ro*math.sin(ang))),3)
+        pygame.draw.circle(surf,(0,40,10),(bx,by),26,1)
+
+    elif phase_idx == 1:  # SETOR CIANO — campo de gelo, planeta gelado + cluster cristalino
+        planet(105,135,58,(0,80,130),
+               bands=[(-24,(0,50,90)),(-10,(0,70,110)),(8,(0,60,100)),(22,(0,45,85))],
+               ring_col=(0,50,90))
+        # Linhas de gelo na superfície
+        for i in range(5):
+            a=math.pi/5*i
+            pygame.draw.arc(surf,(0,50,80),
+                pygame.Rect(105-40,135-40,80,80), a, a+0.4, 1)
+        blob(680, 170, 100, 85, (0,150,220))
+        blob(720, 130, 55, 45, (0,185,245))
+        blob(400, 530, 130, 65, (0,120,200))
+        # Fragmentos de gelo (polígonos hexagonais distantes)
+        for i in range(4):
+            hx=180+i*140; hy=480+int(20*math.sin(tm*0.8+i))
+            pts=[(hx+int(8*math.cos(math.pi/3*k)), hy+int(8*math.sin(math.pi/3*k))) for k in range(6)]
+            pygame.draw.polygon(surf,(0,40,70),pts,1)
+
+    elif phase_idx == 2:  # SETOR ÂMBAR — planeta deserto + flares solares + poeira
+        # Flares do canto superior esquerdo
+        for i in range(7):
+            a=math.pi/3*i*0.2+0.12; fl=70+35*math.sin(tm*1.4+i)
+            fc=(int(min(255,140+50*math.sin(tm+i))),int(55+25*math.sin(tm*2+i)),0)
+            pygame.draw.line(surf,fc,(-15,-15),(int(-15+fl*math.cos(a)),int(-15+fl*math.sin(a))),1)
+        planet(700,155,62,(110,50,0),
+               bands=[(-26,(80,36,0)),(-12,(110,50,0)),(4,(130,58,0)),(18,(95,42,0)),(30,(70,30,0))],
+               ring_col=None)
+        # Mancha tempestade
+        pygame.draw.ellipse(surf,(50,22,0),(688,148,22,14))
+        blob(220,460,150,85,(175,95,0))
+        blob(340,510,85,52,(150,78,0))
+        blob(80,350,90,60,(160,85,0))
+
+    elif phase_idx == 3:  # SETOR VIOLETA — galáxia espiral + buraco negro + nebulosa
+        # Galáxia espiral
+        gx,gy=680,115
+        blob(gx,gy,85,32,(140,0,205))
+        for arm in range(3):
+            a0=arm*math.pi*2/3+tm*0.08
+            for step in range(10):
+                f=step/10; ra=int(14+f*68); aa=a0+f*1.3
+                ax2=gx+int(ra*math.cos(aa)); ay2=gy+int(ra*0.38*math.sin(aa))
+                br=max(0,int(28*(1-f)))
+                if 0<=ax2<W and 0<=ay2<H:
+                    pygame.draw.circle(surf,(br,0,int(br*1.3)),(ax2,ay2),2)
+        blob(150,190,130,95,(160,0,225))
+        blob(80,270,75,55,(120,0,185))
+        # Buraco negro com disco de acreção
+        bh_x,bh_y=125,490
+        pygame.draw.ellipse(surf,(130,0,190),(bh_x-40,bh_y-9,80,18),2)
+        pygame.draw.ellipse(surf,(80,0,130),(bh_x-48,bh_y-12,96,24),1)
+        pygame.draw.circle(surf,(0,0,0),(bh_x,bh_y),12)
+        pygame.draw.circle(surf,(55,0,100),(bh_x,bh_y),14,1)
+        # Jets do buraco negro
+        pygame.draw.line(surf,(60,0,110),(bh_x,bh_y-14),(bh_x,bh_y-50),1)
+        pygame.draw.line(surf,(60,0,110),(bh_x,bh_y+14),(bh_x,bh_y+50),1)
+
+    elif phase_idx == 4:  # SETOR VERMELHO — remanescente de supernova + anã vermelha
+        sn_x,sn_y=185,310
+        for r in range(95,18,-14):
+            f=r/95.0; vc=tuple(int(c*(1-f)*0.22) for c in (255,55,35))
+            pygame.draw.circle(surf,vc,(sn_x,sn_y),r,2)
+        # Filamentos da supernova
+        for i in range(12):
+            a=2*math.pi*i/12; fl=90+int(15*math.sin(tm*2+i))
+            pygame.draw.line(surf,(int(30*(1-i/12)),0,0),
+                (sn_x+int(18*math.cos(a)),sn_y+int(18*math.sin(a))),
+                (sn_x+int(fl*math.cos(a)),sn_y+int(fl*math.sin(a))),1)
+        sn_p=0.5+0.5*math.sin(tm*3.2)
+        pygame.draw.circle(surf,(255,90,50),(sn_x,sn_y),int(9+sn_p*5))
+        pygame.draw.circle(surf,(255,200,140),(sn_x,sn_y),4)
+        blob(585,145,135,92,(200,28,28))
+        blob(660,220,80,62,(175,18,18))
+        # Anã vermelha
+        rd_x,rd_y=705,80
+        pygame.draw.circle(surf,(75,8,8),(rd_x,rd_y),26)
+        pygame.draw.circle(surf,(175,28,18),(rd_x-7,rd_y-7),19)
+        pygame.draw.circle(surf,(220,48,28),(rd_x,rd_y),26,1)
+        for i in range(8):
+            a=2*math.pi*i/8+tm*0.55
+            cl=int(20+10*math.sin(tm*3+i))
+            pygame.draw.line(surf,(80,cl,0),
+                (rd_x+int(26*math.cos(a)),rd_y+int(26*math.sin(a))),
+                (rd_x+int(38*math.cos(a)),rd_y+int(38*math.sin(a))),1)
+
+    elif phase_idx == 5:  # SETOR BRANCO — cluster estelar + pulsar + constelação
+        # Cluster denso
+        for i in range(22):
+            a=2*math.pi*i/22; rc=38+22*((i*7)%5)
+            sx2=400+int(rc*math.cos(a)); sy2=105+int(rc*0.5*math.sin(a))
+            pygame.draw.circle(surf,(180,180,220) if i%3==0 else (120,120,170),(sx2,sy2),2 if i%3==0 else 1)
+        # Constelação em forma de diamante/estrela
+        cpts2=[(295,58),(400,118),(505,58),(548,182),(400,248),(252,182)]
+        for i in range(len(cpts2)):
+            pygame.draw.line(surf,(28,28,48),cpts2[i],cpts2[(i+1)%len(cpts2)],1)
+        for x,y in cpts2: cstar(x,y,(200,200,244))
+        # Diagonais internas
+        pygame.draw.line(surf,(18,18,35),cpts2[0],cpts2[3],1)
+        pygame.draw.line(surf,(18,18,35),cpts2[1],cpts2[4],1)
+        pygame.draw.line(surf,(18,18,35),cpts2[2],cpts2[5],1)
+        blob(150,400,105,72,(155,155,200))
+        blob(680,440,70,50,(130,130,180))
+        # Pulsar com feixe duplo
+        px2,py2=690,455
+        pygame.draw.circle(surf,(180,180,225),(px2,py2),5)
+        pygame.draw.circle(surf,(240,240,255),(px2,py2),2)
+        ba=tm*3.2
+        for blen,bw in [(65,2),(80,1)]:
+            pygame.draw.line(surf,(75,75,115),(px2,py2),(int(px2+blen*math.cos(ba)),int(py2+blen*math.sin(ba))),bw)
+            pygame.draw.line(surf,(45,45,75),(px2,py2),(int(px2+blen*math.cos(ba+math.pi)),int(py2+blen*math.sin(ba+math.pi))),1)
+        # Cometa
+        comet_x=int(W*0.8-tm*18%W); comet_y=int(80+comet_x*0.12)
+        for ti in range(8):
+            cx2=comet_x+ti*8; cy2=comet_y-ti*1
+            if 0<=cx2<W: pygame.draw.circle(surf,(int(100*(1-ti/8)),int(100*(1-ti/8)),int(140*(1-ti/8))),(cx2,cy2),max(1,2-ti//4))
+
+    elif phase_idx == 6:  # SETOR ROSA — nebulosa tentáculos + sistema binário rosa
+        blob(400,125,190,105,(200,0,140))
+        blob(275,180,108,72,(178,0,118))
+        blob(548,172,95,68,(190,0,130))
+        # Tentáculos (elipses alongadas em ângulos)
+        for i,a in enumerate([0.4,1.05,1.85,2.55,3.25,4.05]):
+            tl=72+i*16; tx=400+int(tl*math.cos(a)); ty=125+int(tl*0.45*math.sin(a))
+            blob(tx,ty,42+i*6,22,(165,0,108))
+        # Sistema binário
+        b1x,b1y=655,472; ang2=tm*0.65; ro2=20
+        pygame.draw.circle(surf,(200,0,142),(int(b1x+ro2*math.cos(ang2)),int(b1y+ro2*math.sin(ang2))),5)
+        pygame.draw.circle(surf,(240,100,200),(int(b1x-ro2*math.cos(ang2)),int(b1y-ro2*math.sin(ang2))),3)
+        pygame.draw.circle(surf,(75,0,58),(b1x,b1y),28,1)
+        # Rastro de gás entre os binários (linha curva)
+        pygame.draw.arc(surf,(60,0,45),pygame.Rect(b1x-25,b1y-12,50,24),0,math.pi,1)
+        blob(680,460,55,40,(150,0,105))
+
+    elif phase_idx == 7:  # SETOR LARANJA — gigante gasoso com anéis + ventos estelares
+        gj_x,gj_y,gj_r=118,200,72
+        planet(gj_x,gj_y,gj_r,(110,52,0),
+               bands=[(-30,(82,38,0)),(-16,(108,48,0)),(0,(125,58,0)),(16,(92,42,0)),(30,(68,32,0))],
+               ring_col=(68,32,0))
+        # Grande mancha vermelha
+        pygame.draw.ellipse(surf,(155,65,0),(gj_x-14,gj_y-10,28,18))
+        pygame.draw.ellipse(surf,(42,18,0),(gj_x-6,gj_y-4,12,8))
+        # Ventos estelares
+        for i in range(0,H,55):
+            wx=gj_x+gj_r+8; wlen=55+int(12*math.sin(tm+i*0.012))
+            pygame.draw.line(surf,(18,8,0),(wx,i),(wx+wlen,i),1)
+        blob(620,390,125,82,(198,98,0))
+        blob(695,345,72,52,(175,78,0))
+        # Lua do gigante
+        moon_a=tm*0.4; moon_r=gj_r+55
+        mx=gj_x+int(moon_r*math.cos(moon_a)); my=gj_y+int(moon_r*0.38*math.sin(moon_a))
+        pygame.draw.circle(surf,(55,26,0),(mx,my),8)
+        pygame.draw.circle(surf,(80,38,0),(mx,my),8,1)
+
+    elif phase_idx == 8:  # SETOR DOURADO — pulsar + constelação de 7 pontas + nebulosa
+        # Constelação 7 pontas
+        star7=[]
+        for i in range(14):
+            a=math.pi*2*i/14-math.pi/2; rc=82 if i%2==0 else 42
+            star7.append((int(400+rc*math.cos(a)),int(200+rc*0.58*math.sin(a))))
+        for i in range(len(star7)):
+            pygame.draw.line(surf,(28,24,0),star7[i],star7[(i+1)%len(star7)],1)
+        for i in range(0,len(star7),2): cstar(star7[i][0],star7[i][1],(178,148,0))
+        blob(148,148,135,92,(202,172,0))
+        blob(98,202,82,62,(180,150,0))
+        blob(650,480,88,60,(175,145,0))
+        # Pulsar com feixes animados
+        pul_x,pul_y=668,462
+        pygame.draw.circle(surf,(182,152,0),(pul_x,pul_y),6)
+        pygame.draw.circle(surf,(245,215,82),(pul_x,pul_y),3)
+        ba2=tm*2.6
+        for blen2,bw in [(85,2),(105,1)]:
+            pygame.draw.line(surf,(95,78,0),(pul_x,pul_y),(int(pul_x+blen2*math.cos(ba2)),int(pul_y+blen2*math.sin(ba2))),bw)
+            pygame.draw.line(surf,(60,48,0),(pul_x,pul_y),(int(pul_x+blen2*math.cos(ba2+math.pi)),int(pul_y+blen2*math.sin(ba2+math.pi))),1)
+        # Anéis de energia dourados em torno do pulsar
+        for r in [18,28,40]:
+            pygame.draw.circle(surf,(int(50*(40-r)/40),int(45*(40-r)/40),0),(pul_x,pul_y),r,1)
+
+    else:  # SETOR FINAL (9) — fenda dimensional, nebulosas colidindo, tentáculos
+        rift_x,rift_y=W//2,H//2
+        rp=0.5+0.5*math.sin(tm*1.6)
+        # Anéis da fenda
+        for r in range(115,18,-11):
+            f=r/115.0
+            rc=(int(f*10),int(180*f*(0.45+0.55*rp)),int(220*f))
+            pygame.draw.circle(surf,rc,(rift_x,rift_y),r,1)
+        # Tendrils animados
+        for i in range(10):
+            a=2*math.pi*i/10+tm*0.28
+            tl=int(108+32*math.sin(tm*1.8+i))
+            rc2=(0,int(115+55*math.sin(tm+i)),int(185+35*math.sin(tm*0.7+i)))
+            pygame.draw.line(surf,rc2,
+                (rift_x+int(22*math.cos(a)),rift_y+int(22*math.sin(a))),
+                (rift_x+int(tl*math.cos(a)),rift_y+int(tl*math.sin(a))),1)
+        # 4 nebulosas nos cantos colidindo
+        blob(195,148,105,72,(0,182,225))
+        blob(628,148,92,68,(0,155,205))
+        blob(195,455,105,72,(0,162,215))
+        blob(628,455,92,68,(0,142,202))
+        # Constelação ao redor da fenda
+        ang_c=tm*0.05
+        for i in range(8):
+            a=2*math.pi*i/8+ang_c; rc3=160
+            cx3=rift_x+int(rc3*math.cos(a)); cy3=rift_y+int(rc3*math.sin(a))
+            cstar(cx3,cy3,(0,180,220))
+
 
 # ── Helper de brilho ───────────────────────────────────────────────────────────
 def _bright(col, v):
@@ -1593,6 +1842,8 @@ class Game:
     def _draw(self):
         pal=self.pal
         screen.fill(pal['bg'])
+        if self.state in (self.PLAYING, self.BOSS_WARN, self.PHASE_CLEAR):
+            draw_background(screen, self.phase_idx, pygame.time.get_ticks())
         draw_stars(screen,self.stars,pal['star'])
         if   self.state==self.MENU:             self._draw_menu()
         elif self.state==self.BOSS_WARN:        self._draw_hud(); self._draw_scene(); self._draw_boss_warn()
