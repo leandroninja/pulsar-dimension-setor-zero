@@ -110,7 +110,7 @@ PHASES = [
 ]
 
 screen = pygame.display.set_mode((W, H))
-pygame.display.set_caption("PULSAR: SETOR ZERO")
+pygame.display.set_caption("PULSAR: DIMENSÃO SETOR ZERO")
 clock  = pygame.time.Clock()
 
 _font_lg = pygame.font.SysFont("Courier New", 36, bold=True)
@@ -1483,19 +1483,117 @@ class Game:
             pygame.draw.rect(screen,dim(c,0.4),(bx,by,bar_w,6),1)
 
     def _draw_menu(self):
-        pal=self.pal; c=pal['ui']; t=pygame.time.get_ticks()/1000
-        glow_text(screen,"PULSAR: SETOR ZERO",_font_lg,c,W//2,H//2-108,center=True)
-        glow_text(screen,"A ÚLTIMA FREQUÊNCIA DE RESISTÊNCIA",_font_sm,dim(c,0.5),W//2,H//2-64,center=True)
-        glow_text(screen,"10 SETORES · 10 CHEFES · SURVIVAL MODE",_font_sm,dim(c,0.65),W//2,H//2-42,center=True)
-        if int(t*1.5)%2==0:
-            glow_text(screen,"PRESSIONE ENTER PARA INICIAR",_font_sm,c,W//2,H//2-12,center=True)
-        lines=[("SETAS / WASD","MOVER"),("ESPAÇO / Z","ATIRAR"),("B / X","BOMBA")]
-        for i,(k,v) in enumerate(lines):
-            glow_text(screen,f"{k:<14} {v}",_font_sm,dim(c,0.55),W//2,H//2+32+i*22,center=True)
-        glow_text(screen,f"MELHOR: {self.highscore:07d}",_font_sm,dim(c,0.75),W//2,H//2+120,center=True)
-        for i,ph in enumerate(PHASES):
-            col=ph['ui']; r=6 if i==0 else 4
-            pygame.draw.circle(screen,col,(W//2-90+i*20,H//2+155),r,0 if i<self.phase_idx else 1)
+        pal = self.pal; c = pal['ui']; t = pygame.time.get_ticks()
+        tf = t / 1000.0
+
+        # ── Boss decorativo no fundo (muito escuro) ───────────────────────────
+        draw_boss(screen, 662, H//2+20, dim(c, 0.07), 500, 9, 0)
+
+        # ── Nave do jogador em destaque (esquerda) ────────────────────────────
+        shx = 188; shy = H//2 + 15 + int(10*math.sin(tf*1.5))
+        for gr in range(28, 2, -5):
+            ga = max(0, int(44*(28-gr)//26))
+            gs2 = pygame.Surface((gr*2, gr*2), pygame.SRCALPHA)
+            pygame.draw.circle(gs2, (*c, ga), (gr, gr), gr)
+            screen.blit(gs2, (shx-gr, shy-gr))
+        fh = 14 + int(8*math.sin(tf*10))
+        fc2 = (255,160,30) if int(tf*14)%2 else (255,220,60)
+        pygame.draw.polygon(screen, fc2,
+            [(shx-4,shy+22),(shx+4,shy+22),(shx,shy+22+fh)])
+        for i in range(4):
+            ly = shy - 55 - i*55
+            if ly > 5:
+                pygame.draw.rect(screen, dim(c, max(0.2, 0.58-i*0.12)),
+                    (shx-1, ly, 2, 38))
+        draw_player(screen, shx, shy, c)
+
+        # ── Inimigos em formação (direita → esquerda) ─────────────────────────
+        for row, etype in enumerate([1, 0, 3]):
+            ry = 104 + row * 46
+            for col in range(5):
+                ex = W+80 - ((t//4 + row*170 + col*155) % (W+350))
+                ey = ry + int(4*math.sin(tf*1.1 + col*0.85 + row*1.3))
+                draw_enemy(screen, ex, ey, dim(pal['ec'], 0.24), etype)
+
+        # ── Painel do título ──────────────────────────────────────────────────
+        pw = 494; ph2 = 108; px2 = W//2+52; py2 = 14
+        ps = pygame.Surface((pw, ph2), pygame.SRCALPHA)
+        ps.fill((0, 0, 0, 158))
+        screen.blit(ps, (px2-pw//2, py2))
+        pygame.draw.line(screen, c, (px2-pw//2, py2), (px2+pw//2, py2), 1)
+        pygame.draw.line(screen, c, (px2-pw//2, py2+ph2), (px2+pw//2, py2+ph2), 1)
+        pygame.draw.line(screen, dim(c,0.38), (px2-pw//2, py2), (px2-pw//2, py2+ph2), 1)
+        pygame.draw.line(screen, dim(c,0.38), (px2+pw//2, py2), (px2+pw//2, py2+ph2), 1)
+        for bx3, dx3 in [(px2-pw//2, 1),(px2+pw//2, -1)]:
+            for by3, dy3 in [(py2, 1),(py2+ph2, -1)]:
+                pygame.draw.line(screen, c,
+                    (bx3+dx3*2, by3+dy3*2),(bx3+dx3*18, by3+dy3*2), 1)
+                pygame.draw.line(screen, c,
+                    (bx3+dx3*2, by3+dy3*2),(bx3+dx3*2, by3+dy3*14), 1)
+        glow_text(screen, "PULSAR", _font_lg, c, px2, py2+8, center=True)
+        pygame.draw.line(screen, dim(c,0.28),
+            (px2-205, py2+50),(px2+205, py2+50), 1)
+        glow_text(screen, "DIMENSÃO  SETOR  ZERO", _font_md,
+            dim(c,0.88), px2, py2+54, center=True)
+        glow_text(screen, "A ÚLTIMA FREQUÊNCIA DE RESISTÊNCIA", _font_sm,
+            dim(c,0.42), px2, py2+82, center=True)
+
+        # ── Features do jogo ──────────────────────────────────────────────────
+        feats = [("10","SETORES"),("10","CHEFES"),("10","TIPOS"),("5","ARMAS")]
+        for i,(num,lbl) in enumerate(feats):
+            fx2 = W//2-103+i*82; fy2 = 134
+            pygame.draw.rect(screen, dim(c,0.10), (fx2-25, fy2, 50, 38))
+            pygame.draw.rect(screen, dim(c,0.30), (fx2-25, fy2, 50, 38), 1)
+            glow_text(screen, num,  _font_md, c,          fx2, fy2+2,  center=True)
+            glow_text(screen, lbl,  _font_sm, dim(c,0.5), fx2, fy2+24, center=True)
+
+        # ── Painel de controles (direita) ─────────────────────────────────────
+        cpx = W//2+102; cpy = H//2-52
+        pygame.draw.rect(screen, dim(c,0.08), (cpx, cpy, 192, 110))
+        pygame.draw.rect(screen, dim(c,0.28), (cpx, cpy, 192, 110), 1)
+        glow_text(screen, "CONTROLES", _font_sm, dim(c,0.62),
+            cpx+96, cpy+6, center=True)
+        pygame.draw.line(screen, dim(c,0.2),
+            (cpx+6, cpy+22),(cpx+186, cpy+22), 1)
+        ctrls = [("SETAS/WASD","MOVER"),("ESPAÇO/Z","ATIRAR"),
+                 ("B / X","BOMBA"),("ESC","SAIR")]
+        for i,(k,v) in enumerate(ctrls):
+            glow_text(screen, f"{k} — {v}", _font_sm, dim(c,0.47),
+                cpx+96, cpy+28+i*18, center=True)
+
+        # ── ENTER pulsante ────────────────────────────────────────────────────
+        ent_c = c if int(tf*1.7)%2==0 else dim(c,0.28)
+        glow_text(screen,
+            "►  PRESSIONE  ENTER  PARA  INICIAR  ◄",
+            _font_md, ent_c, W//2, H-124, center=True)
+
+        # ── Separador + highscore ─────────────────────────────────────────────
+        pygame.draw.line(screen, dim(c,0.24), (30, H-102), (W-30, H-102), 1)
+        for mx in [30, W//2, W-30]:
+            pygame.draw.circle(screen, dim(c,0.58), (mx, H-102), 3)
+        glow_text(screen, f"RECORDE: {self.highscore:07d}",
+            _font_sm, dim(c,0.62), W//2, H-94, center=True)
+
+        # ── Barra de setores colorida ─────────────────────────────────────────
+        ph_y = H - 64
+        glow_text(screen, "SETORES:", _font_sm, dim(c,0.35), 52, ph_y+4, center=True)
+        for i, ph in enumerate(PHASES):
+            fx3 = 102 + i*62; ph_c = ph['ui']
+            filled = i < self.phase_idx
+            pygame.draw.rect(screen, dim(ph_c,0.16), (fx3-19, ph_y, 38, 20))
+            pygame.draw.rect(screen,
+                dim(ph_c, 0.55 if filled else 0.18), (fx3-19, ph_y, 38, 20), 1)
+            glow_text(screen, f"{i+1:02d}", _font_sm,
+                ph_c if filled else dim(ph_c,0.28), fx3, ph_y+2, center=True)
+
+        # ── Decorações de canto ────────────────────────────────────────────────
+        cs = 18
+        for bx4, dx4 in [(8,1),(W-8,-1)]:
+            for by4, dy4 in [(8,1),(H-8,-1)]:
+                pygame.draw.line(screen, dim(c,0.38),
+                    (bx4,by4),(bx4+dx4*cs,by4), 1)
+                pygame.draw.line(screen, dim(c,0.38),
+                    (bx4,by4),(bx4,by4+dy4*cs), 1)
 
     def _draw_boss_warn(self):
         c=self.pal['ui']
