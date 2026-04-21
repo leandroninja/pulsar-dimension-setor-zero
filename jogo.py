@@ -1185,7 +1185,7 @@ class Game:
                     save_hs(self.score); pygame.quit(); sys.exit()
                 if self.state == self.MENU and k == pygame.K_RETURN:
                     self._start_intro_cs()
-                if self.state == self.INTRO_CS and k == pygame.K_RETURN:
+                elif self.state == self.INTRO_CS and k in (pygame.K_RETURN, pygame.K_SPACE):
                     self._init_game(); self.state = self.PLAYING
                 if self.state == self.GAME_OVER and k == pygame.K_RETURN:
                     self._init_game(); self.state = self.PLAYING
@@ -2466,13 +2466,13 @@ class Game:
             fade_in("SÓ EXISTE A LD7",
                     _font_lg,c_ld7,W//2,H//2+108,60.0)
             if local_t>2.5 and int(t*1.5)%2:
-                glow_text(screen,"ENTER — INICIAR",_font_sm,
+                glow_text(screen,"ENTER / SPACE — INICIAR",_font_sm,
                           dim(c_ld7,0.4),W//2,H-22,center=True)
             screen.blit(_scanline,(0,0))
             return
 
         if int(t*1.5)%2:
-            glow_text(screen,"ENTER — PULAR",_font_sm,
+            glow_text(screen,"ENTER / SPACE — SALTAR",_font_sm,
                       dim(c_cyan,0.25),W//2,H-22,center=True)
         screen.blit(_scanline,(0,0))
 
