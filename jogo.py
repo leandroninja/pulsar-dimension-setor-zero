@@ -137,37 +137,123 @@ def _snd_boss_death():
     return _mk(s)
 
 def _snd_music():
-    vol=0.14; bpm=145; beat=60/bpm; h=beat/2; q=beat/4
-    mel=[
-        (440,q),(0,q),(494,q),(523,h),(494,q),(440,q),(0,h),
-        (392,q),(440,q),(494,h),(392,q),(330,beat),(0,beat),
-        (523,q),(0,q),(587,q),(659,h),(587,q),(523,q),(0,h),
-        (494,q),(523,q),(587,h),(494,q),(440,beat),(0,beat),
+    # ── 8 compassos, BPM 160, Lá menor ──────────────────────────────────────
+    bpm = 160; b = 60.0/bpm; e = b/2; h = b*2
+    PI2 = 2*math.pi
+
+    mel = [                                    # melodia principal (lead)
+        (440,b),(0,e),(523,e),(659,h),         # compasso 1
+        (587,b),(523,b),(494,h),               # compasso 2
+        (523,b),(0,e),(659,e),(784,h),         # compasso 3
+        (698,b),(659,b),(587,h),               # compasso 4
+        (659,b),(0,e),(880,e),(784,h),         # compasso 5
+        (698,b),(659,b),(587,h),               # compasso 6
+        (523,b),(659,b),(587,b),(523,b),       # compasso 7
+        (440,h),(0,e),(440,e),(523,b),         # compasso 8
     ]
-    bass=[110,110,131,131,110,110,98,98]*4
-    total=max(sum(d for _,d in mel),h*len(bass))
-    n=int(total*SR)
-    buf=array.array('h',[0]*(n*2))
-    pos=0
-    for freq,dur in mel:
-        samp=int(dur*SR)
-        for i in range(samp):
-            if freq>0 and pos+i<n:
-                t=i/SR; env=math.exp(-2*t/dur)
-                v=int(32767*vol*0.65*env*_sq(freq,t))
-                buf[2*(pos+i)]  =max(-32767,min(32767,buf[2*(pos+i)]  +v))
-                buf[2*(pos+i)+1]=max(-32767,min(32767,buf[2*(pos+i)+1]+v))
-        pos+=samp
-    pos=0
-    for freq in bass:
-        samp=int(h*SR)
-        for i in range(samp):
-            if pos+i<n:
-                t=i/SR; env=0.5+0.5*math.exp(-6*t/h)
-                v=int(32767*vol*0.5*env*_sq(freq//2,t))
-                buf[2*(pos+i)]  =max(-32767,min(32767,buf[2*(pos+i)]  +v))
-                buf[2*(pos+i)+1]=max(-32767,min(32767,buf[2*(pos+i)+1]+v))
-        pos+=samp
+    harm = [                                   # harmonia (pad, 1 terça abaixo)
+        (330,b),(0,e),(392,e),(523,h),  (440,b),(392,b),(370,h),
+        (392,b),(0,e),(523,e),(587,h),  (523,b),(494,b),(440,h),
+        (523,b),(0,e),(659,e),(587,h),  (523,b),(494,b),(440,h),
+        (392,b),(523,b),(440,b),(392,b),(330,h),(0,e),(330,e),(392,b),
+    ]
+
+    total = sum(d for _, d in mel)
+    n = int(total*SR) + SR//4
+    buf = array.array('h', [0]*(n*2))
+
+    def wb(idx, v):
+        if 0 <= idx < n:
+            buf[2*idx]   = max(-32767, min(32767, buf[2*idx]   + v))
+            buf[2*idx+1] = max(-32767, min(32767, buf[2*idx+1] + v))
+
+    # ── Lead synth: saw + sine, ataque rápido, decay natural ─────────────────
+    pos = 0
+    for freq, dur in mel:
+        samp = int(dur*SR)
+        if freq > 0:
+            for i in range(samp):
+                t = i/SR
+                env = (1-math.exp(-28*t))*math.exp(-1.6*t/dur)
+                v = int(32767*0.17*env*(_saw(freq,t)*0.58+math.sin(PI2*freq*t)*0.42))
+                wb(pos+i, v)
+        pos += samp
+
+    # ── Pad: sine duplo com chorus leve (levemente desafinado) ───────────────
+    pos = 0
+    for freq, dur in harm:
+        samp = int(dur*SR)
+        if freq > 0:
+            for i in range(samp):
+                t = i/SR
+                env = (1-math.exp(-12*t))*math.exp(-1.4*t/dur)
+                v = int(32767*0.08*env*(
+                    math.sin(PI2*freq*t)
+                    +math.sin(PI2*freq*1.008*t))*0.5)
+                wb(pos+i, v)
+        pos += samp
+
+    # ── Arpejo: square, 8th notes, percorre acorde de Lá menor ──────────────
+    arp = [220, 330, 440, 523, 659, 784, 659, 523]
+    samp_e = int(e*SR); pos = 0; ai = 0
+    while pos < n - samp_e:
+        f = arp[ai % 8]
+        for i in range(samp_e):
+            env = math.exp(-9*i/SR)*(1-math.exp(-70*i/SR))
+            wb(pos+i, int(32767*0.09*env*_sq(f, i/SR)))
+        pos += samp_e; ai += 1
+
+    # ── Sub-bass: saw + sine, quarter notes, linha andante ───────────────────
+    bass = [110,110,131,98, 110,165,98,110]*4
+    samp_b = int(b*SR); pos = 0
+    for fb in bass:
+        if pos >= n: break
+        for i in range(samp_b):
+            t = i/SR
+            env = (1-math.exp(-18*t))*math.exp(-2.8*t/b)
+            v = int(32767*0.19*env*(_saw(fb,t)*0.66+math.sin(PI2*fb*t)*0.34))
+            wb(pos+i, v)
+        pos += samp_b
+
+    # ── Kick: sweep 145→20Hz + ruído de ataque ───────────────────────────────
+    sk = int(0.22*SR); ki = 0; pos = 0
+    while pos < n - samp_b:
+        if ki % 2 == 0:                        # beats 1 e 3 do compasso
+            for i in range(sk):
+                if pos+i >= n: break
+                t = i/SR
+                f2 = 145*math.exp(-16*t)
+                env = math.exp(-5.5*t)*(1-math.exp(-80*t))
+                nz  = random.uniform(-1,1)*math.exp(-18*t)
+                v = int(32767*0.28*env*(math.sin(PI2*f2*t)*0.70+nz*0.30))
+                wb(pos+i, v)
+        pos += samp_b; ki += 1
+
+    # ── Snare: ruído + tom descendente 220Hz ─────────────────────────────────
+    ss = int(0.14*SR); si = 0; pos = 0
+    while pos < n - samp_b:
+        if si % 4 in (1, 3):                   # beats 2 e 4
+            for i in range(ss):
+                if pos+i >= n: break
+                t = i/SR
+                env  = math.exp(-10*t)*(1-math.exp(-100*t))
+                tone = math.sin(PI2*220*math.exp(-30*t)*t)
+                v = int(32767*0.16*env*(random.uniform(-1,1)*0.62+tone*0.38))
+                wb(pos+i, v)
+        pos += samp_b; si += 1
+
+    # ── Hi-hat fechado: ruído de alta frequência, tempo e contratempo ────────
+    sh = int(0.042*SR); pos = 0
+    while pos < n - samp_b:
+        for i in range(sh):
+            if pos+i >= n: break
+            wb(pos+i, int(32767*0.065*math.exp(-48*i/SR)*random.uniform(-1,1)))
+        pos2 = pos + samp_e
+        for i in range(sh):
+            if pos2+i >= n: break
+            wb(pos2+i, int(32767*0.055*math.exp(-52*i/SR)*random.uniform(-1,1)))
+        pos += samp_b
+
     return pygame.mixer.Sound(buffer=buf)
 
 
