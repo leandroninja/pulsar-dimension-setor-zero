@@ -177,172 +177,683 @@ def draw_stars(surf, stars, col):
             surf.set_at((sx,sy-4),dim(c,0.3))
 
 
+# ── Helper de brilho ───────────────────────────────────────────────────────────
+def _bright(col, v):
+    return tuple(min(255, c + v) for c in col)
+
+
 # ── Desenho do jogador ─────────────────────────────────────────────────────────
 def draw_player(surf, cx, cy, col, inv=0):
-    if inv>0 and (inv//6)%2==0: return
-    pts=[(cx,cy-16),(cx-14,cy+9),(cx-7,cy+3),(cx,cy+11),(cx+7,cy+3),(cx+14,cy+9)]
-    pygame.draw.polygon(surf,dim(col,0.35),pts)
-    pygame.draw.polygon(surf,col,pts,1)
-    pygame.draw.circle(surf,col,(cx,cy-4),4)
-    pygame.draw.circle(surf,dim(col,0.25),(cx,cy-4),3)
-    gc=col if (pygame.time.get_ticks()//80)%2 else dim(col,0.5)
-    pygame.draw.circle(surf,gc,(cx,cy+11),3)
-    pygame.draw.circle(surf,dim(col,0.2),(cx,cy+11),5)
+    if inv > 0 and (inv // 6) % 2 == 0: return
+    cx, cy = int(cx), int(cy)
+    t = pygame.time.get_ticks()
+    c0=dim(col,0.12); c1=dim(col,0.28); c2=dim(col,0.50); c3=dim(col,0.72); c4=col
+    c5=_bright(col,60)
+    GLASS=(50,90,200); FLAME=(255,150,20)
+    glow = _bright(FLAME,70) if (t//65)%2 else FLAME
+
+    # Sombra das asas
+    pygame.draw.polygon(surf,c0,[(cx,cy-4),(cx-24,cy+8),(cx-28,cy+18),(cx-20,cy+20),(cx-8,cy+10)])
+    pygame.draw.polygon(surf,c0,[(cx,cy-4),(cx+24,cy+8),(cx+28,cy+18),(cx+20,cy+20),(cx+8,cy+10)])
+    # Asas principais
+    pygame.draw.polygon(surf,c1,[(cx,cy-2),(cx-20,cy+7),(cx-24,cy+16),(cx-16,cy+18),(cx-6,cy+9)])
+    pygame.draw.polygon(surf,c1,[(cx,cy-2),(cx+20,cy+7),(cx+24,cy+16),(cx+16,cy+18),(cx+6,cy+9)])
+    # Painel iluminado das asas
+    pygame.draw.polygon(surf,c2,[(cx-2,cy),(cx-14,cy+7),(cx-18,cy+14),(cx-12,cy+16),(cx-4,cy+8)])
+    pygame.draw.polygon(surf,c2,[(cx+2,cy),(cx+14,cy+7),(cx+18,cy+14),(cx+12,cy+16),(cx+4,cy+8)])
+    # Borda das asas
+    pygame.draw.polygon(surf,c3,[(cx,cy-2),(cx-20,cy+7),(cx-24,cy+16),(cx-16,cy+18),(cx-6,cy+9)],1)
+    pygame.draw.polygon(surf,c3,[(cx,cy-2),(cx+20,cy+7),(cx+24,cy+16),(cx+16,cy+18),(cx+6,cy+9)],1)
+    # Canhões das asas
+    for dx in [-21, 21]:
+        pygame.draw.rect(surf,c2,(cx+dx-1,cy+8,2,9))
+        pygame.draw.rect(surf,c5,(cx+dx-1,cy+15,2,4))
+    # Linha de painel das asas
+    pygame.draw.line(surf,c3,(cx-6,cy+2),(cx-18,cy+13),1)
+    pygame.draw.line(surf,c3,(cx+6,cy+2),(cx+18,cy+13),1)
+    # Fuselagem central
+    pygame.draw.polygon(surf,c2,[(cx,cy-20),(cx-5,cy-8),(cx-6,cy+8),(cx-4,cy+18),(cx+4,cy+18),(cx+6,cy+8),(cx+5,cy-8)])
+    pygame.draw.polygon(surf,c4,[(cx,cy-20),(cx-5,cy-8),(cx-6,cy+8),(cx-4,cy+18),(cx+4,cy+18),(cx+6,cy+8),(cx+5,cy-8)],1)
+    # Destaque central da fuselagem
+    pygame.draw.line(surf,c5,(cx,cy-18),(cx,cy+10),1)
+    # Painéis laterais da fuselagem
+    pygame.draw.line(surf,c1,(cx-4,cy-4),(cx-4,cy+12),1)
+    pygame.draw.line(surf,c1,(cx+4,cy-4),(cx+4,cy+12),1)
+    # Plataforma traseira (entre motores)
+    pygame.draw.rect(surf,c0,(cx-9,cy+16,18,6))
+    pygame.draw.rect(surf,c1,(cx-9,cy+16,18,6),1)
+    # Cockpit
+    pygame.draw.ellipse(surf,dim(GLASS,0.5),(cx-6,cy-23,12,11))
+    pygame.draw.ellipse(surf,GLASS,(cx-4,cy-22,8,8))
+    pygame.draw.ellipse(surf,_bright(GLASS,90),(cx-3,cy-21,4,4))
+    # Pods de motor duplos
+    for dx in [-5, 5]:
+        ex, ey = cx+dx, cy+22
+        pygame.draw.ellipse(surf,c0,(ex-4,ey-6,8,10))
+        pygame.draw.ellipse(surf,c1,(ex-3,ey-5,6,8))
+        pygame.draw.ellipse(surf,c3,(ex-3,ey-5,6,8),1)
+        pygame.draw.circle(surf,glow,(ex,ey+4),3)
+        pygame.draw.circle(surf,dim(FLAME,0.25),(ex,ey+4),5,1)
 
 
 # ── Desenho de 10 tipos de inimigos ───────────────────────────────────────────
 def draw_enemy(surf, cx, cy, col, etype, flash=0):
-    c  = (220,220,220) if flash>0 else col
-    cf = dim(c,0.35)
+    c = (220,220,220) if flash>0 else col
+    c0=dim(c,0.12); c1=dim(c,0.28); c2=dim(c,0.50); c3=dim(c,0.72); c4=c
+    c5=_bright(c,55)
+    GLASS=(50,90,200); ENG=(180,70,20)
+    t = pygame.time.get_ticks()
+    glow = _bright(ENG,60) if (t//80)%2 else ENG
     cx, cy = int(cx), int(cy)
 
-    if etype == 0:   # Padrão — triângulo com asas
-        pts=[(cx,cy+13),(cx-12,cy-7),(cx-6,cy+1),(cx,cy-9),(cx+6,cy+1),(cx+12,cy-7)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,1)
-        pygame.draw.circle(surf,c,(cx,cy+3),3)
-    elif etype == 1: # Rápido — diamante
-        pts=[(cx,cy-11),(cx+8,cy),(cx,cy+11),(cx-8,cy)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,1)
-    elif etype == 2: # Pesado — hexágono
-        pts=[(cx,cy+17),(cx-17,cy+8),(cx-22,cy-5),(cx-10,cy-16),(cx+10,cy-16),(cx+22,cy-5),(cx+17,cy+8)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,1)
-        pygame.draw.circle(surf,c,(cx,cy),5)
-    elif etype == 3: # Zigue-zague — seta com barbatanas
-        pts=[(cx,cy-12),(cx+14,cy+6),(cx+6,cy+2),(cx,cy+12),(cx-6,cy+2),(cx-14,cy+6)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,1)
-        pygame.draw.line(surf,c,(cx-14,cy+6),(cx-18,cy-2),1)
-        pygame.draw.line(surf,c,(cx+14,cy+6),(cx+18,cy-2),1)
-    elif etype == 4: # Bombardeiro — retângulo largo
-        pygame.draw.rect(surf,cf,(cx-18,cy-8,36,18))
-        pygame.draw.rect(surf,c,(cx-18,cy-8,36,18),1)
-        pygame.draw.rect(surf,c,(cx-6,cy+9,12,6),1)
-        pygame.draw.circle(surf,c,(cx-12,cy),4,1)
-        pygame.draw.circle(surf,c,(cx+12,cy),4,1)
-    elif etype == 5: # Varredor — crescente (meia-lua)
-        pts=[(cx-20,cy-4),(cx-12,cy-12),(cx,cy-14),(cx+12,cy-12),(cx+20,cy-4),
-             (cx+14,cy+8),(cx,cy+4),(cx-14,cy+8)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,1)
-    elif etype == 6: # Kamikaze — triângulo agressivo
-        pts=[(cx,cy+15),(cx-16,cy-12),(cx,cy-6),(cx+16,cy-12)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,1)
-        pygame.draw.line(surf,c,(cx-16,cy-12),(cx-22,cy-4),1)
-        pygame.draw.line(surf,c,(cx+16,cy-12),(cx+22,cy-4),1)
-    elif etype == 7: # Torre — retângulo com canhões
-        pygame.draw.rect(surf,cf,(cx-14,cy-10,28,22))
-        pygame.draw.rect(surf,c,(cx-14,cy-10,28,22),1)
-        pygame.draw.rect(surf,c,(cx-2,cy+12,4,8))
-        pygame.draw.rect(surf,c,(cx-10,cy+10,6,6),1)
-        pygame.draw.rect(surf,c,(cx+4,cy+10,6,6),1)
-    elif etype == 8: # Elite — duplo diamante / gravata
-        pts=[(cx-20,cy),(cx-6,cy-10),(cx,cy),(cx-6,cy+10)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,1)
-        pts=[(cx+20,cy),(cx+6,cy-10),(cx,cy),(cx+6,cy+10)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,1)
-        pygame.draw.circle(surf,c,(cx,cy),4)
-    else:            # Destruidor — mini-cruzador
-        pts=[(cx,cy+20),(cx-22,cy+10),(cx-26,cy-2),(cx-14,cy-18),(cx+14,cy-18),(cx+26,cy-2),(cx+22,cy+10)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,1)
-        pygame.draw.circle(surf,c,(cx,cy-4),6)
-        for dx in [-14,14]:
-            pygame.draw.circle(surf,c,(cx+dx,cy+4),3,1)
+    if etype == 0:   # Padrão — caça interceptador (faces down)
+        # Asas traseiras (motores no topo)
+        pygame.draw.polygon(surf,c0,[(cx-4,cy-13),(cx-22,cy-2),(cx-18,cy+6),(cx-6,cy+1)])
+        pygame.draw.polygon(surf,c0,[(cx+4,cy-13),(cx+22,cy-2),(cx+18,cy+6),(cx+6,cy+1)])
+        pygame.draw.polygon(surf,c1,[(cx-3,cy-11),(cx-18,cy-1),(cx-14,cy+5),(cx-5,cy+1)])
+        pygame.draw.polygon(surf,c1,[(cx+3,cy-11),(cx+18,cy-1),(cx+14,cy+5),(cx+5,cy+1)])
+        pygame.draw.polygon(surf,c2,[(cx-3,cy-9),(cx-12,cy-1),(cx-9,cy+4),(cx-4,cy+1)])
+        pygame.draw.polygon(surf,c2,[(cx+3,cy-9),(cx+12,cy-1),(cx+9,cy+4),(cx+4,cy+1)])
+        # Borda das asas
+        pygame.draw.polygon(surf,c3,[(cx-3,cy-11),(cx-18,cy-1),(cx-14,cy+5),(cx-5,cy+1)],1)
+        pygame.draw.polygon(surf,c3,[(cx+3,cy-11),(cx+18,cy-1),(cx+14,cy+5),(cx+5,cy+1)],1)
+        # Fuselagem
+        body=[(cx,cy+14),(cx-6,cy+2),(cx-5,cy-12),(cx,cy-14),(cx+5,cy-12),(cx+6,cy+2)]
+        pygame.draw.polygon(surf,c2,body); pygame.draw.polygon(surf,c4,body,1)
+        pygame.draw.line(surf,c5,(cx,cy-12),(cx,cy+10),1)
+        # Nariz (ponta inferior)
+        pygame.draw.polygon(surf,c3,[(cx,cy+14),(cx-4,cy+6),(cx+4,cy+6)])
+        pygame.draw.polygon(surf,c5,[(cx,cy+15),(cx-2,cy+10),(cx+2,cy+10)])
+        # Cockpit
+        pygame.draw.ellipse(surf,GLASS,(cx-4,cy-10,8,8))
+        pygame.draw.ellipse(surf,_bright(GLASS,70),(cx-2,cy-9,4,4))
+        # Glow do motor
+        pygame.draw.circle(surf,glow,(cx,cy-14),3)
+        pygame.draw.circle(surf,dim(ENG,0.25),(cx,cy-14),5,1)
+
+    elif etype == 1: # Rápido — interceptador esbelto
+        # Asas finas
+        pygame.draw.polygon(surf,c1,[(cx-2,cy-12),(cx-18,cy-4),(cx-14,cy+4),(cx-2,cy+2)])
+        pygame.draw.polygon(surf,c1,[(cx+2,cy-12),(cx+18,cy-4),(cx+14,cy+4),(cx+2,cy+2)])
+        pygame.draw.polygon(surf,c2,[(cx-2,cy-10),(cx-13,cy-3),(cx-9,cy+3),(cx-2,cy+1)])
+        pygame.draw.polygon(surf,c2,[(cx+2,cy-10),(cx+13,cy-3),(cx+9,cy+3),(cx+2,cy+1)])
+        pygame.draw.polygon(surf,c3,[(cx-2,cy-12),(cx-18,cy-4),(cx-14,cy+4),(cx-2,cy+2)],1)
+        pygame.draw.polygon(surf,c3,[(cx+2,cy-12),(cx+18,cy-4),(cx+14,cy+4),(cx+2,cy+2)],1)
+        # Fuselagem longa e estreita
+        body=[(cx,cy+15),(cx-3,cy),(cx-3,cy-13),(cx,cy-15),(cx+3,cy-13),(cx+3,cy)]
+        pygame.draw.polygon(surf,c2,body); pygame.draw.polygon(surf,c4,body,1)
+        pygame.draw.line(surf,c5,(cx,cy-13),(cx,cy+12),1)
+        # Nariz pontiagudo
+        pygame.draw.polygon(surf,c5,[(cx,cy+16),(cx-2,cy+10),(cx+2,cy+10)])
+        # Cockpit
+        pygame.draw.ellipse(surf,GLASS,(cx-3,cy-12,6,6))
+        pygame.draw.ellipse(surf,_bright(GLASS,60),(cx-2,cy-11,4,4))
+        # Motores gêmeos
+        for dx in [-3, 3]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy-15),2)
+            pygame.draw.circle(surf,dim(ENG,0.2),(cx+dx,cy-15),4,1)
+
+    elif etype == 2: # Pesado — bombardeiro encouraçado
+        # Casco blindado externo
+        pygame.draw.polygon(surf,c0,[(cx,cy+18),(cx-24,cy+8),(cx-26,cy-6),(cx-14,cy-16),(cx+14,cy-16),(cx+26,cy-6),(cx+24,cy+8)])
+        pygame.draw.polygon(surf,c1,[(cx,cy+16),(cx-20,cy+8),(cx-22,cy-4),(cx-12,cy-14),(cx+12,cy-14),(cx+22,cy-4),(cx+20,cy+8)])
+        pygame.draw.polygon(surf,c2,[(cx-8,cy+14),(cx-16,cy+6),(cx-18,cy-2),(cx-8,cy-10),(cx+8,cy-10),(cx+18,cy-2),(cx+16,cy+6),(cx+8,cy+14)])
+        pygame.draw.polygon(surf,c4,[(cx,cy+16),(cx-20,cy+8),(cx-22,cy-4),(cx-12,cy-14),(cx+12,cy-14),(cx+22,cy-4),(cx+20,cy+8)],1)
+        # Painéis de armadura
+        pygame.draw.line(surf,c3,(cx-18,cy+4),(cx-10,cy+12),1)
+        pygame.draw.line(surf,c3,(cx+18,cy+4),(cx+10,cy+12),1)
+        pygame.draw.line(surf,c3,(cx-20,cy-2),(cx-12,cy-10),1)
+        pygame.draw.line(surf,c3,(cx+20,cy-2),(cx+12,cy-10),1)
+        # Canhões laterais
+        for dx in [-20, 20]:
+            pygame.draw.rect(surf,c3,(cx+dx-2,cy+10,4,8))
+            pygame.draw.rect(surf,c5,(cx+dx-1,cy+16,2,4))
+        # Cockpit
+        pygame.draw.ellipse(surf,GLASS,(cx-5,cy-6,10,10))
+        pygame.draw.ellipse(surf,_bright(GLASS,60),(cx-3,cy-5,6,6))
+        # Motores triplos
+        for dx in [-10, 0, 10]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy-16),3)
+            pygame.draw.circle(surf,dim(ENG,0.2),(cx+dx,cy-16),5,1)
+
+    elif etype == 3: # Zigue-zague — caça com aletas
+        # Fuselagem central
+        body=[(cx,cy+13),(cx-5,cy+2),(cx-5,cy-10),(cx,cy-13),(cx+5,cy-10),(cx+5,cy+2)]
+        pygame.draw.polygon(surf,c2,body); pygame.draw.polygon(surf,c4,body,1)
+        pygame.draw.line(surf,c5,(cx,cy-11),(cx,cy+11),1)
+        # Asas assimétricas
+        pygame.draw.polygon(surf,c1,[(cx-5,cy-2),(cx-24,cy-10),(cx-20,cy+2),(cx-5,cy+6)])
+        pygame.draw.polygon(surf,c1,[(cx+5,cy-2),(cx+24,cy-10),(cx+20,cy+2),(cx+5,cy+6)])
+        pygame.draw.polygon(surf,c2,[(cx-5,cy-1),(cx-17,cy-7),(cx-14,cy+2),(cx-5,cy+5)])
+        pygame.draw.polygon(surf,c2,[(cx+5,cy-1),(cx+17,cy-7),(cx+14,cy+2),(cx+5,cy+5)])
+        # Aletas traseiras
+        pygame.draw.polygon(surf,c2,[(cx-5,cy-8),(cx-14,cy-14),(cx-10,cy-10)])
+        pygame.draw.polygon(surf,c2,[(cx+5,cy-8),(cx+14,cy-14),(cx+10,cy-10)])
+        pygame.draw.line(surf,c3,(cx-5,cy-8),(cx-14,cy-14),1)
+        pygame.draw.line(surf,c3,(cx+5,cy-8),(cx+14,cy-14),1)
+        # Nariz
+        pygame.draw.polygon(surf,c5,[(cx,cy+13),(cx-3,cy+6),(cx+3,cy+6)])
+        # Cockpit
+        pygame.draw.ellipse(surf,GLASS,(cx-3,cy-9,6,7))
+        # Motor
+        pygame.draw.circle(surf,glow,(cx,cy-13),3)
+        pygame.draw.circle(surf,dim(ENG,0.2),(cx,cy-13),5,1)
+
+    elif etype == 4: # Bombardeiro — asa voadora larga
+        # Asa principal
+        pygame.draw.polygon(surf,c0,[(cx,cy+10),(cx-32,cy),(cx-38,cy-10),(cx-26,cy-18),(cx+26,cy-18),(cx+38,cy-10),(cx+32,cy)])
+        pygame.draw.polygon(surf,c1,[(cx,cy+8),(cx-28,cy+1),(cx-34,cy-8),(cx-22,cy-16),(cx+22,cy-16),(cx+34,cy-8),(cx+28,cy+1)])
+        pygame.draw.polygon(surf,c2,[(cx,cy+6),(cx-18,cy+1),(cx-22,cy-6),(cx-14,cy-12),(cx+14,cy-12),(cx+22,cy-6),(cx+18,cy+1)])
+        pygame.draw.polygon(surf,c4,[(cx,cy+8),(cx-28,cy+1),(cx-34,cy-8),(cx-22,cy-16),(cx+22,cy-16),(cx+34,cy-8),(cx+28,cy+1)],1)
+        # Nervuras das asas
+        for dx in [-22,-11,11,22]:
+            pygame.draw.line(surf,c3,(cx+dx,cy+4),(cx+dx,cy-10),1)
+        # Baias de bombas centrais
+        pygame.draw.rect(surf,c0,(cx-8,cy-4,16,12))
+        pygame.draw.rect(surf,c3,(cx-8,cy-4,16,12),1)
+        for dx in [-4,4]:
+            pygame.draw.rect(surf,c5,(cx+dx-1,cy+7,2,4))
+        # Cockpit
+        pygame.draw.ellipse(surf,GLASS,(cx-4,cy-8,8,6))
+        pygame.draw.ellipse(surf,_bright(GLASS,50),(cx-2,cy-7,4,4))
+        # Motores nos pods das asas
+        for dx in [-20, 20]:
+            pygame.draw.ellipse(surf,c1,(cx+dx-5,cy-20,10,6))
+            pygame.draw.ellipse(surf,c3,(cx+dx-5,cy-20,10,6),1)
+            pygame.draw.circle(surf,glow,(cx+dx,cy-20),3)
+
+    elif etype == 5: # Varredor — crescente/meia-lua
+        # Corpo em crescente
+        pygame.draw.polygon(surf,c0,[(cx-22,cy-8),(cx-14,cy-16),(cx,cy-18),(cx+14,cy-16),(cx+22,cy-8),(cx+16,cy+8),(cx,cy+4),(cx-16,cy+8)])
+        pygame.draw.polygon(surf,c1,[(cx-18,cy-6),(cx-10,cy-14),(cx,cy-16),(cx+10,cy-14),(cx+18,cy-6),(cx+12,cy+6),(cx,cy+2),(cx-12,cy+6)])
+        pygame.draw.polygon(surf,c2,[(cx-12,cy-4),(cx-6,cy-12),(cx,cy-13),(cx+6,cy-12),(cx+12,cy-4),(cx+8,cy+3),(cx,cy+1),(cx-8,cy+3)])
+        pygame.draw.polygon(surf,c4,[(cx-18,cy-6),(cx-10,cy-14),(cx,cy-16),(cx+10,cy-14),(cx+18,cy-6),(cx+12,cy+6),(cx,cy+2),(cx-12,cy+6)],1)
+        # Nariz central (arma principal)
+        pygame.draw.polygon(surf,c3,[(cx,cy+6),(cx-4,cy+2),(cx+4,cy+2)])
+        pygame.draw.polygon(surf,c5,[(cx,cy+9),(cx-2,cy+4),(cx+2,cy+4)])
+        # Canhões nas pontas
+        for dx in [-18, 18]:
+            pygame.draw.rect(surf,c3,(cx+dx-1,cy+4,2,8))
+            pygame.draw.rect(surf,c5,(cx+dx-1,cy+10,2,3))
+        # Cockpit
+        pygame.draw.ellipse(surf,GLASS,(cx-4,cy-10,8,7))
+        pygame.draw.ellipse(surf,_bright(GLASS,50),(cx-2,cy-9,4,4))
+        # Motores nas pontas do crescente
+        for dx in [-12, 12]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy-16),3)
+            pygame.draw.circle(surf,dim(ENG,0.2),(cx+dx,cy-16),5,1)
+
+    elif etype == 6: # Kamikaze — faca espacial
+        # Corpo estreito e longo
+        body=[(cx,cy+16),(cx-4,cy+4),(cx-3,cy-12),(cx,cy-14),(cx+3,cy-12),(cx+4,cy+4)]
+        pygame.draw.polygon(surf,c2,body); pygame.draw.polygon(surf,c4,body,1)
+        pygame.draw.line(surf,c5,(cx,cy-12),(cx,cy+14),1)
+        # Aletas agressivas inclinadas para frente
+        pygame.draw.polygon(surf,c1,[(cx-4,cy),(cx-22,cy-12),(cx-18,cy+6),(cx-4,cy+8)])
+        pygame.draw.polygon(surf,c1,[(cx+4,cy),(cx+22,cy-12),(cx+18,cy+6),(cx+4,cy+8)])
+        pygame.draw.polygon(surf,c2,[(cx-4,cy+2),(cx-16,cy-8),(cx-13,cy+5),(cx-4,cy+7)])
+        pygame.draw.polygon(surf,c2,[(cx+4,cy+2),(cx+16,cy-8),(cx+13,cy+5),(cx+4,cy+7)])
+        # Espinhos nas pontas
+        pygame.draw.line(surf,c5,(cx-22,cy-12),(cx-26,cy-16),1)
+        pygame.draw.line(surf,c5,(cx+22,cy-12),(cx+26,cy-16),1)
+        # Nariz afiado
+        pygame.draw.polygon(surf,c5,[(cx,cy+16),(cx-2,cy+10),(cx+2,cy+10)])
+        # Sensor (sem cockpit visível)
+        pygame.draw.rect(surf,dim(GLASS,0.7),(cx-2,cy-8,4,4))
+        pygame.draw.rect(surf,GLASS,(cx-2,cy-8,4,4),1)
+        # Motor
+        pygame.draw.circle(surf,glow,(cx,cy-14),3)
+        pygame.draw.circle(surf,dim(ENG,0.2),(cx,cy-14),6,1)
+
+    elif etype == 7: # Torre — plataforma de artilharia
+        # Corpo retangular blindado
+        pygame.draw.rect(surf,c0,(cx-18,cy-14,36,26))
+        pygame.draw.rect(surf,c1,(cx-16,cy-12,32,22))
+        pygame.draw.rect(surf,c2,(cx-10,cy-8,20,14))
+        pygame.draw.rect(surf,c4,(cx-16,cy-12,32,22),1)
+        # Cantos blindados
+        for dx, dy in [(-16,-12),(14,-12),(-16,8),(14,8)]:
+            pygame.draw.rect(surf,c3,(cx+dx,cy+dy,4,4))
+        # Canhões laterais
+        for dx in [-22, 22]:
+            pygame.draw.rect(surf,c0,(cx+dx-3,cy-4,6,10))
+            pygame.draw.rect(surf,c3,(cx+dx-2,cy-3,4,8))
+            pygame.draw.rect(surf,c5,(cx+dx-1,cy+5,2,5))
+        # Torre central com canhão ventral
+        pygame.draw.ellipse(surf,c2,(cx-6,cy-6,12,10))
+        pygame.draw.rect(surf,c3,(cx-1,cy+4,2,10))
+        pygame.draw.rect(surf,c5,(cx-1,cy+12,2,4))
+        # Sensor
+        pygame.draw.circle(surf,GLASS,(cx,cy-2),3)
+        pygame.draw.circle(surf,_bright(GLASS,60),(cx,cy-2),1)
+        # Propulsor traseiro
+        pygame.draw.rect(surf,c1,(cx-6,cy+12,12,4))
+        pygame.draw.circle(surf,glow,(cx,cy+16),3)
+
+    elif etype == 8: # Elite — caça de fuselagem dupla
+        # Fuselagem esquerda
+        bl=[(cx-16,cy+12),(cx-20,cy+2),(cx-18,cy-12),(cx-12,cy-14),(cx-8,cy-2),(cx-10,cy+10)]
+        pygame.draw.polygon(surf,c1,bl); pygame.draw.polygon(surf,c3,bl,1)
+        pygame.draw.line(surf,c4,(cx-14,cy-12),(cx-14,cy+8),1)
+        # Fuselagem direita
+        br=[(cx+16,cy+12),(cx+20,cy+2),(cx+18,cy-12),(cx+12,cy-14),(cx+8,cy-2),(cx+10,cy+10)]
+        pygame.draw.polygon(surf,c1,br); pygame.draw.polygon(surf,c3,br,1)
+        pygame.draw.line(surf,c4,(cx+14,cy-12),(cx+14,cy+8),1)
+        # Conexão central
+        pygame.draw.rect(surf,c2,(cx-8,cy-4,16,10))
+        pygame.draw.rect(surf,c4,(cx-8,cy-4,16,10),1)
+        pygame.draw.line(surf,c5,(cx,cy-2),(cx,cy+4),1)
+        # Cockpits duplos
+        for dx in [-14, 14]:
+            pygame.draw.ellipse(surf,GLASS,(cx+dx-3,cy-10,6,6))
+            pygame.draw.ellipse(surf,_bright(GLASS,60),(cx+dx-2,cy-9,4,4))
+        # Canhões cruzados
+        for dx in [-8, 8]:
+            pygame.draw.rect(surf,c3,(cx+dx-1,cy+10,2,8))
+            pygame.draw.rect(surf,c5,(cx+dx-1,cy+16,2,4))
+        # Motores quádruplos
+        for dx in [-18,-6,6,18]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy-14),2)
+            pygame.draw.circle(surf,dim(ENG,0.2),(cx+dx,cy-14),4,1)
+
+    else:            # Destruidor — mini-cruzador pesado
+        # Casco principal
+        pygame.draw.polygon(surf,c0,[(cx,cy+22),(cx-24,cy+12),(cx-28,cy-2),(cx-16,cy-18),(cx+16,cy-18),(cx+28,cy-2),(cx+24,cy+12)])
+        pygame.draw.polygon(surf,c1,[(cx,cy+20),(cx-20,cy+10),(cx-24,cy-2),(cx-14,cy-16),(cx+14,cy-16),(cx+24,cy-2),(cx+20,cy+10)])
+        pygame.draw.polygon(surf,c2,[(cx,cy+14),(cx-12,cy+7),(cx-14,cy-1),(cx-8,cy-10),(cx+8,cy-10),(cx+14,cy-1),(cx+12,cy+7)])
+        pygame.draw.polygon(surf,c4,[(cx,cy+20),(cx-20,cy+10),(cx-24,cy-2),(cx-14,cy-16),(cx+14,cy-16),(cx+24,cy-2),(cx+20,cy+10)],1)
+        # Superestrutura central
+        pygame.draw.rect(surf,c2,(cx-6,cy-6,12,16))
+        pygame.draw.rect(surf,c4,(cx-6,cy-6,12,16),1)
+        pygame.draw.line(surf,c5,(cx,cy-4),(cx,cy+10),1)
+        # Canhões anti-aéreos laterais
+        for dx in [-20, 20]:
+            pygame.draw.rect(surf,c3,(cx+dx-2,cy+8,4,10))
+            pygame.draw.rect(surf,c5,(cx+dx-1,cy+16,2,5))
+        # Nariz
+        pygame.draw.polygon(surf,c3,[(cx,cy+22),(cx-4,cy+14),(cx+4,cy+14)])
+        # Cockpit blindado
+        pygame.draw.ellipse(surf,GLASS,(cx-4,cy-2,8,7))
+        pygame.draw.ellipse(surf,_bright(GLASS,50),(cx-2,cy-1,4,4))
+        # Motores triplos
+        for dx in [-10, 0, 10]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy-18),3)
+            pygame.draw.circle(surf,dim(ENG,0.2),(cx+dx,cy-18),5,1)
 
 
 # ── Desenho de 10 bosses únicos ────────────────────────────────────────────────
 def draw_boss(surf, cx, cy, col, hp, btype, flash=0):
     c  = (220,220,220) if flash>0 else col
-    cf = dim(c,0.28)
+    c0=dim(c,0.12); c1=dim(c,0.20); c2=dim(c,0.38); c3=dim(c,0.62); c4=c
+    c5=_bright(c,50)
+    GLASS=(50,90,200); FLAME=(200,100,20); RED=(220,60,40)
+    t = pygame.time.get_ticks()
+    glow = _bright(FLAME,60) if (t//80)%2 else FLAME
     cx, cy = int(cx), int(cy)
     maxhp = 300 + btype * 50
 
-    if btype == 0:   # Asa-delta — cruzador largo
-        pts=[(cx,cy+26),(cx-30,cy+14),(cx-60,cy+2),(cx-42,cy-18),(cx-20,cy-24),(cx,cy-16),(cx+20,cy-24),(cx+42,cy-18),(cx+60,cy+2),(cx+30,cy+14)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,2)
-        pygame.draw.circle(surf,c,(cx,cy-2),10); pygame.draw.circle(surf,cf,(cx,cy-2),8)
-        for dx in [-30,30]: pygame.draw.circle(surf,c,(cx+dx,cy+8),5,1)
+    if btype == 0:   # Asa-delta — porta-aviões alado
+        # Sombra
+        pygame.draw.polygon(surf,c0,[(cx,cy+30),(cx-34,cy+14),(cx-66,cy),(cx-46,cy-22),(cx-22,cy-28),(cx,cy-20),(cx+22,cy-28),(cx+46,cy-22),(cx+66,cy),(cx+34,cy+14)])
+        # Asas principais
+        pygame.draw.polygon(surf,c1,[(cx,cy+26),(cx-30,cy+12),(cx-60,cy),(cx-42,cy-20),(cx-20,cy-26),(cx,cy-18),(cx+20,cy-26),(cx+42,cy-20),(cx+60,cy),(cx+30,cy+12)])
+        # Superfície das asas
+        pygame.draw.polygon(surf,c2,[(cx,cy+20),(cx-20,cy+8),(cx-44,cy-2),(cx-30,cy-16),(cx-14,cy-22),(cx,cy-14),(cx+14,cy-22),(cx+30,cy-16),(cx+44,cy-2),(cx+20,cy+8)])
+        # Borda
+        pygame.draw.polygon(surf,c4,[(cx,cy+26),(cx-30,cy+12),(cx-60,cy),(cx-42,cy-20),(cx-20,cy-26),(cx,cy-18),(cx+20,cy-26),(cx+42,cy-20),(cx+60,cy),(cx+30,cy+12)],1)
+        # Fuselagem central
+        pygame.draw.rect(surf,c2,(cx-12,cy-14,24,34))
+        pygame.draw.rect(surf,c4,(cx-12,cy-14,24,34),1)
+        pygame.draw.line(surf,c5,(cx,cy-12),(cx,cy+18),1)
+        # Canhões nas pontas
+        for dx in [-60, 60]:
+            pygame.draw.rect(surf,c3,(cx+dx-2,cy+2,4,10))
+            pygame.draw.rect(surf,c5,(cx+dx-1,cy+10,2,5))
+        # Nervuras das asas
+        for dx in [-42,-26,26,42]:
+            pygame.draw.line(surf,c3,(cx+dx,cy+8),(cx+dx//2,cy-8),1)
+        # Escotilhas de hangar
+        for dx in [-24, 0, 24]:
+            pygame.draw.rect(surf,c0,(cx+dx-6,cy+2,12,8))
+            pygame.draw.rect(surf,c3,(cx+dx-6,cy+2,12,8),1)
+        # Torre de controle
+        pygame.draw.rect(surf,c2,(cx-6,cy-18,12,8))
+        pygame.draw.rect(surf,GLASS,(cx-4,cy-17,8,6))
+        pygame.draw.rect(surf,_bright(GLASS,60),(cx-2,cy-16,4,4))
+        # Propulsores
+        for dx in [-14,-5,5,14]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy-26),4)
+            pygame.draw.circle(surf,dim(FLAME,0.2),(cx+dx,cy-26),6,1)
+        # Nariz
+        pygame.draw.polygon(surf,c3,[(cx,cy+30),(cx-6,cy+20),(cx+6,cy+20)])
 
-    elif btype == 1: # Caranguejo — corpo + garras
-        pygame.draw.ellipse(surf,cf,(cx-44,cy-22,88,44))
-        pygame.draw.ellipse(surf,c,(cx-44,cy-22,88,44),2)
-        for sx,ex1,ey1,ex2,ey2 in [(-44,-68,cy-8,-72,cy+10),( 44, 68,cy-8, 72,cy+10)]:
-            pygame.draw.line(surf,c,(cx+sx,cy),(cx+ex1,ey1),2)
-            pygame.draw.line(surf,c,(cx+ex1,ey1),(cx+ex2,ey2),2)
-            pygame.draw.circle(surf,c,(cx+ex2,ey2),5)
-        pygame.draw.circle(surf,c,(cx,cy),8); pygame.draw.circle(surf,cf,(cx,cy),6)
+    elif btype == 1: # Caranguejo — cruzador orgânico
+        # Casco oval central
+        pygame.draw.ellipse(surf,c0,(cx-48,cy-24,96,48))
+        pygame.draw.ellipse(surf,c1,(cx-44,cy-22,88,44))
+        pygame.draw.ellipse(surf,c2,(cx-32,cy-14,64,28))
+        pygame.draw.ellipse(surf,c4,(cx-44,cy-22,88,44),1)
+        pygame.draw.line(surf,c5,(cx-30,cy),(cx+30,cy),1)
+        # Garras laterais
+        for sx,ex1,ey1,ex2,ey2 in [(-44,-70,cy-14,-76,cy+14),(44,70,cy-14,76,cy+14)]:
+            pygame.draw.line(surf,c2,(cx+sx,cy),(cx+ex1,ey1),3)
+            pygame.draw.line(surf,c4,(cx+sx,cy),(cx+ex1,ey1),1)
+            pygame.draw.line(surf,c2,(cx+ex1,ey1),(cx+ex2,ey2),3)
+            pygame.draw.line(surf,c4,(cx+ex1,ey1),(cx+ex2,ey2),1)
+            pygame.draw.circle(surf,c2,(cx+ex2,ey2),7)
+            pygame.draw.circle(surf,c5,(cx+ex2,ey2),3)
+            pygame.draw.circle(surf,c4,(cx+ex2,ey2),7,1)
+        # Pernas menores
+        for sx,ey in [(-38,cy+16),(-24,cy+22),(24,cy+22),(38,cy+16)]:
+            nx = cx + sx + (6 if sx > 0 else -6)
+            pygame.draw.line(surf,c2,(cx+sx,cy+12),(nx,ey),2)
+            pygame.draw.circle(surf,c3,(nx,ey),3)
+        # Olho central
+        pygame.draw.circle(surf,c1,(cx,cy),12)
+        pygame.draw.circle(surf,RED,(cx,cy),8)
+        pygame.draw.circle(surf,_bright(RED,60),(cx,cy),4)
+        pygame.draw.circle(surf,c4,(cx,cy),12,1)
+        # Canhões ventrais
+        for dx in [-20, 0, 20]:
+            pygame.draw.rect(surf,c3,(cx+dx-2,cy+18,4,8))
+            pygame.draw.rect(surf,c5,(cx+dx-1,cy+24,2,4))
+        # Propulsores
+        for dx in [-18,-6,6,18]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy-22),3)
+            pygame.draw.circle(surf,dim(FLAME,0.2),(cx+dx,cy-22),5,1)
 
-    elif btype == 2: # Canhoneira — oval + pods
-        pygame.draw.ellipse(surf,cf,(cx-38,cy-20,76,40))
-        pygame.draw.ellipse(surf,c,(cx-38,cy-20,76,40),2)
-        for dx in [-40,40]:
-            pygame.draw.ellipse(surf,cf,(cx+dx-12,cy-8,24,20))
-            pygame.draw.ellipse(surf,c,(cx+dx-12,cy-8,24,20),1)
-            pygame.draw.rect(surf,c,(cx+dx-3,cy+12,6,10))
-        pygame.draw.circle(surf,c,(cx,cy),7); pygame.draw.circle(surf,cf,(cx,cy),5)
+    elif btype == 2: # Canhoneira — fragata pesada
+        # Casco principal
+        pygame.draw.polygon(surf,c0,[(cx,cy+24),(cx-40,cy+12),(cx-44,cy-8),(cx-28,cy-22),(cx+28,cy-22),(cx+44,cy-8),(cx+40,cy+12)])
+        pygame.draw.polygon(surf,c1,[(cx,cy+20),(cx-34,cy+10),(cx-38,cy-6),(cx-24,cy-20),(cx+24,cy-20),(cx+38,cy-6),(cx+34,cy+10)])
+        pygame.draw.polygon(surf,c2,[(cx,cy+14),(cx-20,cy+6),(cx-22,cy-2),(cx-14,cy-12),(cx+14,cy-12),(cx+22,cy-2),(cx+20,cy+6)])
+        pygame.draw.polygon(surf,c4,[(cx,cy+20),(cx-34,cy+10),(cx-38,cy-6),(cx-24,cy-20),(cx+24,cy-20),(cx+38,cy-6),(cx+34,cy+10)],1)
+        # Pods de armas laterais
+        for dx in [-44, 44]:
+            pygame.draw.ellipse(surf,c1,(cx+dx-14,cy-10,28,22))
+            pygame.draw.ellipse(surf,c2,(cx+dx-10,cy-7,20,14))
+            pygame.draw.ellipse(surf,c4,(cx+dx-14,cy-10,28,22),1)
+            for dy in [-4, 4]:
+                pygame.draw.rect(surf,c3,(cx+dx-2,cy+dy+8,4,12))
+                pygame.draw.rect(surf,c5,(cx+dx-1,cy+dy+18,2,5))
+        # Superestrutura
+        pygame.draw.rect(surf,c2,(cx-16,cy-16,32,14))
+        pygame.draw.rect(surf,c4,(cx-16,cy-16,32,14),1)
+        # Torre de controle
+        pygame.draw.rect(surf,c3,(cx-8,cy-24,16,10))
+        pygame.draw.rect(surf,GLASS,(cx-6,cy-23,12,8))
+        pygame.draw.rect(surf,_bright(GLASS,60),(cx-4,cy-22,8,5))
+        # Canhão principal ventral
+        pygame.draw.rect(surf,c3,(cx-3,cy+18,6,12))
+        pygame.draw.rect(surf,c5,(cx-2,cy+28,4,5))
+        # Motores
+        for dx in [-22,-8,8,22]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy-20),4)
+            pygame.draw.circle(surf,dim(FLAME,0.2),(cx+dx,cy-20),6,1)
+        # Detalhes de painéis
+        pygame.draw.line(surf,c3,(cx-30,cy+6),(cx-20,cy+14),1)
+        pygame.draw.line(surf,c3,(cx+30,cy+6),(cx+20,cy+14),1)
 
-    elif btype == 3: # Dreadnought — fortaleza retangular
-        pygame.draw.rect(surf,cf,(cx-56,cy-26,112,52))
-        pygame.draw.rect(surf,c,(cx-56,cy-26,112,52),2)
-        for dx in [-40,-20,0,20,40]:
-            pygame.draw.rect(surf,c,(cx+dx-4,cy+26,8,10))
-        for dx in [-32,0,32]:
-            pygame.draw.rect(surf,c,(cx+dx-6,cy-36,12,12))
-        pygame.draw.circle(surf,c,(cx,cy),10); pygame.draw.circle(surf,cf,(cx,cy),8)
+    elif btype == 3: # Dreadnought — fortaleza espacial
+        # Casco retangular massivo
+        pygame.draw.rect(surf,c0,(cx-60,cy-30,120,58))
+        pygame.draw.rect(surf,c1,(cx-56,cy-28,112,52))
+        pygame.draw.rect(surf,c2,(cx-44,cy-18,88,32))
+        pygame.draw.rect(surf,c4,(cx-56,cy-28,112,52),1)
+        # Armadura em camadas
+        for dy in [-14, 0, 14]:
+            pygame.draw.line(surf,c3,(cx-56,cy+dy),(cx+56,cy+dy),1)
+        # Torres de canhão superiores
+        for dx in [-44,-22,0,22,44]:
+            pygame.draw.rect(surf,c2,(cx+dx-5,cy-38,10,12))
+            pygame.draw.rect(surf,c4,(cx+dx-5,cy-38,10,12),1)
+            pygame.draw.rect(surf,c3,(cx+dx-2,cy-40,4,6))
+            pygame.draw.rect(surf,c5,(cx+dx-1,cy-42,2,5))
+        # Canhões ventrais
+        for dx in [-36,-18,0,18,36]:
+            pygame.draw.rect(surf,c3,(cx+dx-2,cy+28,4,10))
+            pygame.draw.rect(surf,c5,(cx+dx-1,cy+36,2,5))
+        # Escudos nas laterais
+        for bx2 in [cx-60, cx+52]:
+            pygame.draw.rect(surf,c2,(bx2,cy-10,8,18))
+            pygame.draw.rect(surf,c4,(bx2,cy-10,8,18),1)
+        # Ponte de comando
+        pygame.draw.rect(surf,c3,(cx-18,cy-28,36,14))
+        pygame.draw.rect(surf,GLASS,(cx-14,cy-27,28,10))
+        pygame.draw.rect(surf,_bright(GLASS,50),(cx-10,cy-26,18,6))
+        # Motores traseiros
+        for dx in [-36,-18,0,18,36]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy-28),5)
+            pygame.draw.circle(surf,dim(FLAME,0.2),(cx+dx,cy-28),7,1)
+        # Núcleo de energia
+        pygame.draw.circle(surf,RED,(cx,cy),8)
+        pygame.draw.circle(surf,_bright(RED,40),(cx,cy),4)
 
-    elif btype == 4: # Fantasma — diamante rotacionado
-        pts=[(cx,cy-46),(cx+28,cy),(cx,cy+46),(cx-28,cy)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,2)
-        for dx,dy in [(-14,-12),(14,-12),(0,16)]:
-            pygame.draw.circle(surf,c,(cx+dx,cy+dy),5,1)
-        pygame.draw.circle(surf,c,(cx,cy),8); pygame.draw.circle(surf,cf,(cx,cy),6)
+    elif btype == 4: # Fantasma — caçador esguio
+        # Corpo extremamente delgado
+        body4=[(cx,cy+48),(cx-8,cy+20),(cx-12,cy),(cx-10,cy-28),(cx,cy-44),(cx+10,cy-28),(cx+12,cy),(cx+8,cy+20)]
+        pygame.draw.polygon(surf,c0,body4)
+        pygame.draw.polygon(surf,c1,[(cx,cy+44),(cx-6,cy+18),(cx-10,cy-2),(cx-8,cy-26),(cx,cy-42),(cx+8,cy-26),(cx+10,cy-2),(cx+6,cy+18)])
+        pygame.draw.polygon(surf,c2,[(cx,cy+36),(cx-4,cy+14),(cx-6,cy-2),(cx-4,cy-22),(cx,cy-34),(cx+4,cy-22),(cx+6,cy-2),(cx+4,cy+14)])
+        pygame.draw.polygon(surf,c4,body4,1)
+        # Asas fantasma
+        pygame.draw.polygon(surf,c1,[(cx-12,cy-4),(cx-42,cy-16),(cx-36,cy),(cx-12,cy+8)])
+        pygame.draw.polygon(surf,c1,[(cx+12,cy-4),(cx+42,cy-16),(cx+36,cy),(cx+12,cy+8)])
+        pygame.draw.polygon(surf,c2,[(cx-10,cy-3),(cx-30,cy-12),(cx-26,cy-1),(cx-10,cy+6)])
+        pygame.draw.polygon(surf,c2,[(cx+10,cy-3),(cx+30,cy-12),(cx+26,cy-1),(cx+10,cy+6)])
+        # Propulsores
+        for dx in [-8, 8]:
+            pygame.draw.ellipse(surf,c1,(cx+dx-4,cy-46,8,8))
+            pygame.draw.circle(surf,glow,(cx+dx,cy-46),3)
+        # Olho fantasma
+        pygame.draw.ellipse(surf,dim(GLASS,0.6),(cx-6,cy-16,12,10))
+        pygame.draw.ellipse(surf,GLASS,(cx-4,cy-15,8,8))
+        pygame.draw.circle(surf,RED,(cx,cy-11),3)
+        # Linha central
+        pygame.draw.line(surf,c3,(cx,cy-40),(cx,cy+44),1)
+        # Nariz afiado
+        pygame.draw.polygon(surf,c5,[(cx,cy+48),(cx-3,cy+38),(cx+3,cy+38)])
 
-    elif btype == 5: # Cristal — hexágono espinhoso
-        r=38
+    elif btype == 5: # Cristal — entidade hexagonal
+        r=40
+        # Vértices hexagonais
+        pts_outer=[(cx+int(r*math.cos(math.pi/3*i-math.pi/2)),cy+int(r*math.sin(math.pi/3*i-math.pi/2))) for i in range(6)]
+        pts_inner=[(cx+int(r*0.55*math.cos(math.pi/3*i-math.pi/2)),cy+int(r*0.55*math.sin(math.pi/3*i-math.pi/2))) for i in range(6)]
+        # Sombra
+        pygame.draw.polygon(surf,c0,[(x+2,y+2) for x,y in pts_outer])
+        # Corpo hexagonal
+        pygame.draw.polygon(surf,c1,pts_outer)
+        pygame.draw.polygon(surf,c2,pts_inner)
+        # Cristais nas faces
+        for i in range(6):
+            a1=math.pi/3*i-math.pi/2; a2=math.pi/3*(i+1)-math.pi/2
+            ax=cx+int(r*0.55*math.cos(a1)); ay=cy+int(r*0.55*math.sin(a1))
+            bx2=cx+int(r*0.55*math.cos(a2)); by2=cy+int(r*0.55*math.sin(a2))
+            ox=cx+int((r+16)*math.cos((a1+a2)/2)); oy=cy+int((r+16)*math.sin((a1+a2)/2))
+            pygame.draw.polygon(surf,c2,[(ax,ay),(ox,oy),(bx2,by2)])
+            pygame.draw.polygon(surf,c4,[(ax,ay),(ox,oy),(bx2,by2)],1)
+        pygame.draw.polygon(surf,c4,pts_outer,2)
+        # Arestas iluminadas
         for i in range(6):
             a=math.pi/3*i-math.pi/2
-            x1,y1=cx+int(r*math.cos(a)),cy+int(r*math.sin(a))
-            x2,y2=cx+int((r+14)*math.cos(a+math.pi/6)),cy+int((r+14)*math.sin(a+math.pi/6))
-            pygame.draw.line(surf,c,(cx,cy),(x2,y2),1)
-            pygame.draw.circle(surf,c,(x1,y1),4,1)
-        pts=[( cx+int(r*math.cos(math.pi/3*i-math.pi/2)), cy+int(r*math.sin(math.pi/3*i-math.pi/2)) ) for i in range(6)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,2)
-        pygame.draw.circle(surf,c,(cx,cy),9); pygame.draw.circle(surf,cf,(cx,cy),7)
+            x1=cx+int(r*0.55*math.cos(a)); y1=cy+int(r*0.55*math.sin(a))
+            x2=cx+int(r*math.cos(a)); y2=cy+int(r*math.sin(a))
+            pygame.draw.line(surf,c4,(x1,y1),(x2,y2),1)
+        # Núcleo pulsante
+        nr = 12 + (3 if (t//150)%2 else 0)
+        pygame.draw.circle(surf,c1,(cx,cy),nr)
+        pygame.draw.circle(surf,c3,(cx,cy),nr-3)
+        pygame.draw.circle(surf,c5,(cx,cy),nr-6)
+        pygame.draw.circle(surf,_bright(c4,80),(cx,cy),4)
+        # Propulsores nos vértices
+        for i in range(6):
+            a=math.pi/3*i-math.pi/2+math.pi/6
+            vx=cx+int((r+2)*math.cos(a)); vy=cy+int((r+2)*math.sin(a))
+            pygame.draw.circle(surf,glow,(vx,vy),3)
 
-    elif btype == 6: # Nave-mãe — disco enorme
-        pygame.draw.ellipse(surf,cf,(cx-64,cy-18,128,36))
-        pygame.draw.ellipse(surf,c,(cx-64,cy-18,128,36),2)
-        pygame.draw.ellipse(surf,cf,(cx-28,cy-30,56,28))
-        pygame.draw.ellipse(surf,c,(cx-28,cy-30,56,28),1)
-        for dx in range(-56,64,20):
-            pygame.draw.circle(surf,c,(cx+dx,cy+10),4,1)
-        pygame.draw.circle(surf,c,(cx,cy-16),7)
+    elif btype == 6: # Nave-mãe — disco colossal
+        # Sombra exterior
+        pygame.draw.ellipse(surf,c0,(cx-68,cy-22,136,44))
+        # Disco principal
+        pygame.draw.ellipse(surf,c1,(cx-64,cy-20,128,40))
+        pygame.draw.ellipse(surf,c2,(cx-48,cy-14,96,28))
+        pygame.draw.ellipse(surf,c4,(cx-64,cy-20,128,40),1)
+        # Cúpula superior
+        pygame.draw.ellipse(surf,c2,(cx-30,cy-32,60,28))
+        pygame.draw.ellipse(surf,GLASS,(cx-22,cy-30,44,22))
+        pygame.draw.ellipse(surf,_bright(GLASS,50),(cx-14,cy-28,28,14))
+        pygame.draw.ellipse(surf,c4,(cx-30,cy-32,60,28),1)
+        # Anel de armas externo
+        for i in range(8):
+            a=2*math.pi*i/8
+            wx=cx+int(52*math.cos(a)); wy=cy+int(14*math.sin(a))
+            pygame.draw.circle(surf,c3,(wx,wy),4)
+            pygame.draw.circle(surf,c5,(wx,wy),2)
+            if i%2==0:
+                nx=cx+int(58*math.cos(a)); ny=cy+int(16*math.sin(a))
+                pygame.draw.line(surf,c4,(wx,wy),(nx,ny),2)
+        # Nervuras do disco
+        for i in range(6):
+            a=math.pi/3*i
+            pygame.draw.line(surf,c3,(cx,cy),(cx+int(48*math.cos(a)),cy+int(13*math.sin(a))),1)
+        # Motores na borda inferior
+        for dx in [-36,-18,0,18,36]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy+20),4)
+            pygame.draw.circle(surf,dim(FLAME,0.2),(cx+dx,cy+20),6,1)
+        # Core central
+        pygame.draw.circle(surf,RED,(cx,cy),8)
+        pygame.draw.circle(surf,_bright(RED,50),(cx,cy),4)
+        pygame.draw.circle(surf,c4,(cx,cy),8,1)
 
-    elif btype == 7: # Tempestade de Fogo — nave angular agressiva
-        pts=[(cx,cy-44),(cx+22,cy-8),(cx+50,cy+8),(cx+28,cy+28),(cx,cy+16),(cx-28,cy+28),(cx-50,cy+8),(cx-22,cy-8)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,2)
-        pygame.draw.line(surf,c,(cx,cy-44),(cx,cy+16),1)
-        for dx in [-20,20]: pygame.draw.circle(surf,c,(cx+dx,cy+10),4,1)
-        pygame.draw.circle(surf,c,(cx,cy-14),8); pygame.draw.circle(surf,cf,(cx,cy-14),6)
+    elif btype == 7: # Tempestade — caçador angular agressivo
+        # Asas serrilhadas
+        pygame.draw.polygon(surf,c0,[(cx,cy-48),(cx+26,cy-14),(cx+54,cy+6),(cx+32,cy+28),(cx,cy+18),(cx-32,cy+28),(cx-54,cy+6),(cx-26,cy-14)])
+        pygame.draw.polygon(surf,c1,[(cx,cy-44),(cx+22,cy-10),(cx+50,cy+4),(cx+28,cy+24),(cx,cy+14),(cx-28,cy+24),(cx-50,cy+4),(cx-22,cy-10)])
+        pygame.draw.polygon(surf,c2,[(cx,cy-34),(cx+14,cy-8),(cx+34,cy+2),(cx+18,cy+16),(cx,cy+10),(cx-18,cy+16),(cx-34,cy+2),(cx-14,cy-8)])
+        pygame.draw.polygon(surf,c4,[(cx,cy-44),(cx+22,cy-10),(cx+50,cy+4),(cx+28,cy+24),(cx,cy+14),(cx-28,cy+24),(cx-50,cy+4),(cx-22,cy-10)],1)
+        # Fuselagem central
+        pygame.draw.rect(surf,c2,(cx-10,cy-40,20,56))
+        pygame.draw.rect(surf,c4,(cx-10,cy-40,20,56),1)
+        pygame.draw.line(surf,c5,(cx,cy-38),(cx,cy+14),1)
+        # Lâminas das asas
+        pygame.draw.line(surf,c4,(cx,cy-44),(cx+50,cy+4),1)
+        pygame.draw.line(surf,c4,(cx,cy-44),(cx-50,cy+4),1)
+        # Canhões de plasma nas pontas
+        for dx,gy in [(-50,cy+4),(50,cy+4)]:
+            pygame.draw.rect(surf,c3,(cx+dx-3,gy,6,12))
+            pygame.draw.rect(surf,c5,(cx+dx-1,gy+10,2,6))
+        # Nariz
+        pygame.draw.polygon(surf,c3,[(cx,cy+28),(cx-6,cy+16),(cx+6,cy+16)])
+        pygame.draw.polygon(surf,c5,[(cx,cy+30),(cx-2,cy+22),(cx+2,cy+22)])
+        # Cockpit blindado
+        pygame.draw.ellipse(surf,GLASS,(cx-7,cy-32,14,12))
+        pygame.draw.ellipse(surf,_bright(GLASS,70),(cx-5,cy-31,10,9))
+        # Motores laterais
+        for mx,gy in [(-20,cy-16),(20,cy-16),(-34,cy-6),(34,cy-6)]:
+            pygame.draw.circle(surf,glow,(cx+mx,gy),4)
+            pygame.draw.circle(surf,dim(FLAME,0.2),(cx+mx,gy),6,1)
 
-    elif btype == 8: # Titã — encouraçado massivo
-        pygame.draw.rect(surf,cf,(cx-62,cy-32,124,64))
-        pygame.draw.rect(surf,c,(cx-62,cy-32,124,64),2)
-        pygame.draw.rect(surf,cf,(cx-42,cy-46,84,18))
-        pygame.draw.rect(surf,c,(cx-42,cy-46,84,18),1)
-        for dx in [-46,-22,0,22,46]:
-            pygame.draw.rect(surf,c,(cx+dx-4,cy+30,8,14))
-        for dx in [-34,0,34]:
-            pygame.draw.circle(surf,c,(cx+dx,cy),6,1)
-        pygame.draw.circle(surf,c,(cx,cy),11); pygame.draw.circle(surf,cf,(cx,cy),9)
+    elif btype == 8: # Titã — encouraçado colossal
+        # Casco externo massivo
+        pygame.draw.rect(surf,c0,(cx-66,cy-36,132,70))
+        pygame.draw.rect(surf,c1,(cx-62,cy-34,124,64))
+        pygame.draw.rect(surf,c2,(cx-46,cy-20,92,40))
+        pygame.draw.rect(surf,c4,(cx-62,cy-34,124,64),1)
+        # Superestrutura superior
+        pygame.draw.rect(surf,c1,(cx-44,cy-50,88,18))
+        pygame.draw.rect(surf,c2,(cx-36,cy-50,72,14))
+        pygame.draw.rect(surf,c4,(cx-44,cy-50,88,18),1)
+        # Torres de artilharia
+        for dx in [-40,-22,-6,6,22,40]:
+            pygame.draw.rect(surf,c2,(cx+dx-4,cy-60,8,14))
+            pygame.draw.rect(surf,c4,(cx+dx-4,cy-60,8,14),1)
+            pygame.draw.rect(surf,c3,(cx+dx-2,cy-62,4,6))
+            pygame.draw.rect(surf,c5,(cx+dx-1,cy-64,2,6))
+        # Baterias de mísseis laterais
+        for dy in [-20, 0, 20]:
+            for bx3 in [cx-66, cx+58]:
+                pygame.draw.rect(surf,c2,(bx3,cy+dy-4,8,8))
+                pygame.draw.rect(surf,c4,(bx3,cy+dy-4,8,8),1)
+        # Canhões ventrais
+        for dx in [-40,-20,0,20,40]:
+            pygame.draw.rect(surf,c3,(cx+dx-3,cy+34,6,14))
+            pygame.draw.rect(surf,c5,(cx+dx-2,cy+46,4,6))
+        # Blindagem em camadas
+        for dy in [-20, 0, 20]:
+            pygame.draw.line(surf,c3,(cx-62,cy+dy),(cx+62,cy+dy),1)
+        for dx in [-30, 0, 30]:
+            pygame.draw.line(surf,c3,(cx+dx,cy-34),(cx+dx,cy+34),1)
+        # Ponte de comando
+        pygame.draw.rect(surf,c3,(cx-20,cy-30,40,16))
+        pygame.draw.rect(surf,GLASS,(cx-16,cy-29,32,12))
+        pygame.draw.rect(surf,_bright(GLASS,50),(cx-12,cy-28,24,8))
+        # Núcleo de energia
+        pygame.draw.circle(surf,RED,(cx,cy),10)
+        pygame.draw.circle(surf,_bright(RED,60),(cx,cy),5)
+        pygame.draw.circle(surf,c4,(cx,cy),10,1)
+        # Motores principais
+        for dx in [-36,-18,0,18,36]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy-34),5)
+            pygame.draw.circle(surf,dim(FLAME,0.15),(cx+dx,cy-34),8,1)
+        # Propulsores auxiliares
+        for dx in [-50, 50]:
+            pygame.draw.circle(surf,glow,(cx+dx,cy-24),4)
 
-    else:            # Soberano Final — complexo, múltiplas partes
-        pts=[(cx,cy-48),(cx+24,cy-20),(cx+56,cy),(cx+32,cy+24),(cx+16,cy+40),(cx,cy+28),(cx-16,cy+40),(cx-32,cy+24),(cx-56,cy),(cx-24,cy-20)]
-        pygame.draw.polygon(surf,cf,pts); pygame.draw.polygon(surf,c,pts,2)
-        for dx in [-28,28]: pygame.draw.circle(surf,c,(cx+dx,cy-8),8,1)
-        for dx in [-44,44]: pygame.draw.circle(surf,c,(cx+dx,cy+8),5,1)
-        pygame.draw.circle(surf,c,(cx,cy),13); pygame.draw.circle(surf,cf,(cx,cy),10)
-        pygame.draw.circle(surf,dim(c,0.8),(cx,cy),5)
+    else:            # Soberano Zero — entidade final
+        pulse = 4 if (t//200)%2 else 0
+        outer_r=56; inner_r=32
+        # Estrela de 10 pontas
+        star_pts=[]
+        for i in range(20):
+            a=math.pi/10*i-math.pi/2
+            r = outer_r if i%2==0 else inner_r
+            star_pts.append((cx+int(r*math.cos(a)),cy+int(r*math.sin(a))))
+        pygame.draw.polygon(surf,c0,[(x+2,y+2) for x,y in star_pts])
+        pygame.draw.polygon(surf,c1,star_pts)
+        # Preenchimento interno
+        inner_fill=[]
+        for i in range(20):
+            a=math.pi/10*i-math.pi/2
+            r2 = inner_r-8 if i%2==0 else int(inner_r*0.55)
+            inner_fill.append((cx+int(r2*math.cos(a)),cy+int(r2*math.sin(a))))
+        pygame.draw.polygon(surf,c2,inner_fill)
+        pygame.draw.polygon(surf,c4,star_pts,1)
+        # Anéis de armas
+        for r in [22, 34, 46]:
+            pygame.draw.circle(surf,c3,(cx,cy),r,1)
+        # Turrets nas pontas externas
+        for i in range(0,20,2):
+            a=math.pi/10*i-math.pi/2
+            tx=cx+int(outer_r*math.cos(a)); ty=cy+int(outer_r*math.sin(a))
+            pygame.draw.circle(surf,c3,(tx,ty),5)
+            pygame.draw.circle(surf,c5,(tx,ty),2)
+        # Canhões nos vértices internos
+        for i in range(1,20,2):
+            a=math.pi/10*i-math.pi/2
+            tx=cx+int(inner_r*math.cos(a)); ty=cy+int(inner_r*math.sin(a))
+            pygame.draw.circle(surf,c2,(tx,ty),3)
+        # Raios do centro para as pontas
+        for i in range(0,20,4):
+            a=math.pi/10*i-math.pi/2
+            ex=cx+int(outer_r*math.cos(a)); ey=cy+int(outer_r*math.sin(a))
+            pygame.draw.line(surf,c3,(cx,cy),(ex,ey),1)
+        # Núcleo pulsante
+        pr = 14 + pulse
+        pygame.draw.circle(surf,c0,(cx,cy),pr+4)
+        pygame.draw.circle(surf,RED,(cx,cy),pr)
+        pygame.draw.circle(surf,_bright(RED,80),(cx,cy),pr-6)
+        pygame.draw.circle(surf,_bright(RED,120),(cx,cy),pr-10)
+        pygame.draw.circle(surf,c4,(cx,cy),pr,1)
+        # Motores espectrais
+        for i in range(5):
+            a=2*math.pi*i/5-math.pi/2
+            mx=cx+int(42*math.cos(a)); my=cy+int(42*math.sin(a))
+            pygame.draw.circle(surf,glow,(mx,my),4)
+            pygame.draw.circle(surf,dim(FLAME,0.2),(mx,my),6,1)
 
     # Barra de HP universal
-    bar_w=200; bar_x=cx-100; bar_y=cy-(52 if btype in(8,9) else 42)
+    tops = [44, 40, 44, 80, 64, 64, 48, 68, 84, 76]
+    bar_w=200; bar_x=cx-100; bar_y=cy-tops[min(btype,9)]
     pygame.draw.rect(surf,dim(c,0.22),(bar_x,bar_y,bar_w,7))
     fill=max(0,int(bar_w*hp/maxhp))
     bar_col=(220,50,50) if flash==0 and hp<maxhp*0.3 else c
@@ -353,34 +864,67 @@ def draw_boss(surf, cx, cy, col, hp, btype, flash=0):
 # ── Asteroides e projéteis ────────────────────────────────────────────────────
 def draw_asteroid(surf, cx, cy, radius, col, seed):
     rng = random.Random(seed)
+    npts = 12
     pts = []
-    for i in range(9):
-        a = 2*math.pi*i/9 + rng.uniform(-0.25, 0.25)
-        r = radius * rng.uniform(0.65, 1.0)
+    for i in range(npts):
+        a = 2*math.pi*i/npts + rng.uniform(-0.20, 0.20)
+        r = radius * rng.uniform(0.60, 1.0)
         pts.append((int(cx + r*math.cos(a)), int(cy + r*math.sin(a))))
-    pygame.draw.polygon(surf, dim(col, 0.22), pts)
-    pygame.draw.polygon(surf, dim(col, 0.65), pts, 1)
+    # Sombra
+    pygame.draw.polygon(surf,dim(col,0.08),[(x+2,y+2) for x,y in pts])
+    # Corpo
+    pygame.draw.polygon(surf,dim(col,0.18),pts)
+    # Face iluminada
+    lit = pts[:npts//2+1]
+    if len(lit) >= 3:
+        pygame.draw.polygon(surf,dim(col,0.30),lit)
+    pygame.draw.polygon(surf,dim(col,0.55),pts,1)
+    # Crateras
+    r1 = max(2, int(radius*0.28))
+    cr1x = cx + rng.randint(-int(radius*0.3), int(radius*0.3))
+    cr1y = cy + rng.randint(-int(radius*0.3), int(radius*0.3))
+    pygame.draw.circle(surf,dim(col,0.08),(cr1x,cr1y),r1)
+    pygame.draw.circle(surf,dim(col,0.40),(cr1x,cr1y),r1,1)
+    if radius > 8:
+        r2 = max(2, int(radius*0.18))
+        cr2x = cx + rng.randint(-int(radius*0.4), int(radius*0.4))
+        cr2y = cy + rng.randint(-int(radius*0.4), int(radius*0.4))
+        pygame.draw.circle(surf,dim(col,0.08),(cr2x,cr2y),r2)
+        pygame.draw.circle(surf,dim(col,0.35),(cr2x,cr2y),r2,1)
 
 def draw_bullet_player(surf, bx, by, col):
-    pygame.draw.rect(surf,col,(int(bx)-2,int(by)-6,4,12))
-    pygame.draw.rect(surf,dim(col,0.4),(int(bx)-1,int(by)-9,2,4))
+    bx, by = int(bx), int(by)
+    pygame.draw.rect(surf,dim(col,0.3),(bx-3,by-8,6,16))
+    pygame.draw.rect(surf,col,(bx-2,by-7,4,14))
+    pygame.draw.rect(surf,_bright(col,80),(bx-1,by-6,2,12))
+    pygame.draw.circle(surf,_bright(col,120),(bx,by-7),2)
 
 def draw_bullet_enemy(surf, bx, by, col):
-    pygame.draw.circle(surf,col,(int(bx),int(by)),4)
-    pygame.draw.circle(surf,dim(col,0.4),(int(bx),int(by)),6,1)
+    bx, by = int(bx), int(by)
+    pygame.draw.circle(surf,dim(col,0.3),(bx,by),6)
+    pygame.draw.circle(surf,col,(bx,by),4)
+    pygame.draw.circle(surf,_bright(col,80),(bx,by),2)
 
 def draw_powerup(surf, cx, cy, ptype, col, bp_col):
-    cx,cy=int(cx),int(cy)
-    if ptype==0:
-        c=col; pts=[(cx,cy-10),(cx+10,cy),(cx,cy+10),(cx-10,cy)]
-        pygame.draw.polygon(surf,dim(c,0.28),pts); pygame.draw.polygon(surf,c,pts,1)
-        pygame.draw.line(surf,c,(cx,cy-5),(cx,cy+5),1)
-        pygame.draw.line(surf,c,(cx-5,cy),(cx+5,cy),1)
+    cx, cy = int(cx), int(cy)
+    t = pygame.time.get_ticks()
+    pulse = 2 if (t//200)%2 else 0
+    if ptype == 0:
+        c=col; r=10+pulse
+        pts=[(cx,cy-r),(cx+r,cy),(cx,cy+r),(cx-r,cy)]
+        pygame.draw.polygon(surf,dim(c,0.25),pts)
+        pygame.draw.polygon(surf,c,pts,1)
+        pygame.draw.polygon(surf,_bright(c,60),[(cx,cy-r//2),(cx+r//2,cy),(cx,cy+r//2),(cx-r//2,cy)])
+        pygame.draw.circle(surf,_bright(c,100),(cx,cy),3)
     else:
-        c=bp_col
-        pygame.draw.circle(surf,dim(c,0.28),(cx,cy),10)
-        pygame.draw.circle(surf,c,(cx,cy),10,1)
-        pygame.draw.circle(surf,c,(cx,cy),4)
+        c=bp_col; r=10+pulse
+        pygame.draw.circle(surf,dim(c,0.20),(cx,cy),r+2)
+        pygame.draw.circle(surf,dim(c,0.40),(cx,cy),r)
+        pygame.draw.circle(surf,c,(cx,cy),r,1)
+        pygame.draw.circle(surf,_bright(c,80),(cx,cy),r-3,1)
+        pygame.draw.circle(surf,_bright(c,120),(cx,cy),4)
+        pygame.draw.line(surf,_bright(c,80),(cx,cy-r+3),(cx,cy+r-3),1)
+        pygame.draw.line(surf,_bright(c,80),(cx-r+3,cy),(cx+r-3,cy),1)
 
 
 # ── Classe principal ───────────────────────────────────────────────────────────
